@@ -3,7 +3,7 @@ from protocol import Protocol
 
 UPLOAD = 1
 DOWNLOAD = 2
-RECDATA = 3
+RECPACKAGE = 3
 
 def main():
     serverSocket = SocketUDP()
@@ -11,6 +11,8 @@ def main():
     protocol = Protocol()
 
     while True:
+
+        fileDownload = ""
 
         segment = protocol.receive(serverSocket)
         command = segment[0]
@@ -20,6 +22,8 @@ def main():
         elif command == DOWNLOAD:
             fileName = protocol.processDownloadSegment(segment)
             print('command {} fileName {}'.format(command, fileName))
-        elif command == RECDATA:
-            pass
+        elif command == RECPACKAGE:
+            dataSize, data = protocol.processRecPackageSegment(segment)
+            if(len(fileDownload) == fileSize):
+                print('file {}'.format(fileDownload))
 main()
