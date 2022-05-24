@@ -60,7 +60,6 @@ class Protocol:
         return segment
 
 
-
     def sendChunkMessage(self, clientSocket, serverAddress, message):
         for i in range(0, len(message), self.MSS):
             packageMessage = self.createRecPackageMessage(i, self.MSS, message)
