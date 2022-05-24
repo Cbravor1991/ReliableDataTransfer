@@ -12,7 +12,7 @@ class SocketUDP:
         return self.socket.recvfrom(bytesToReceive)
 
     def sendTo(self, message, clientAddress):
-        self.socket.sendTo(message, clientAddress)
+        self.socket.sendto(message, clientAddress)
     
     def shutdown(self):
         pass
