@@ -21,16 +21,6 @@ class Protocol:
         downloadMessage += bytearray(fileName, 'utf-8') 
         return downloadMessage
 
-    def sendMessage(self, clientSocket, serverAddress, message):
-        clientSocket.sendTo(message, serverAddress)
-    
-    def receiveCommand(self, serverSocket):
-        command, clientAddress = serverSocket.receiveFrom(1)
-        return int(command[0])
-
-    def receive(self, serverSocket):
-        segment, clientAddress = serverSocket.receiveFrom(self.packageSize)
-        return segment
 
     def processUploadSegment(self, segment):  
         fileSize = int.from_bytes(segment[1:5], 'big')
@@ -46,3 +36,10 @@ class Protocol:
         for i in range(0,4):
             fileName += chr(fileNameArray[i])
         return fileName
+
+    def sendMessage(self, clientSocket, serverAddress, message):
+        clientSocket.sendTo(message, serverAddress)
+    
+    def receive(self, serverSocket):
+        segment, clientAddress = serverSocket.receiveFrom(self.packageSize)
+        return segment

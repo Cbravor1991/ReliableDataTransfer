@@ -1,4 +1,3 @@
-from fileinput import filename
 from socketUDP import SocketUDP
 from protocol import Protocol
 
@@ -17,8 +16,10 @@ def main():
         command = segment[0]
         if command == UPLOAD:
             fileSize, fileName = protocol.processUploadSegment(segment)
+            print('command {} fileSize {} fileName {}'.format(command, fileSize, fileName))
         elif command == DOWNLOAD:
             fileName = protocol.processDownloadSegment(segment)
+            print('command {} fileName {}'.format(command, fileName))
         elif command == RECDATA:
             pass
 main()
