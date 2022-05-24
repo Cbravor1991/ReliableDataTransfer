@@ -16,6 +16,7 @@ def main():
 
         segment = protocol.receive(serverSocket)
         command = segment[0]
+
         if command == UPLOAD:
             fileSize, fileName = protocol.processUploadSegment(segment)
             print('command {} fileSize {} fileName {}'.format(command, fileSize, fileName))

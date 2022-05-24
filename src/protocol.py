@@ -5,7 +5,7 @@ DownloadMessage: 2 | fileName
 """
 class Protocol:
     
-    def __init__(self) -> None:
+    def __init__(self):
         self.upload = bytearray([1])
         self.download = bytearray([2])
         self.packageSize = 10
@@ -14,10 +14,11 @@ class Protocol:
         
     def createUploadMessage(self, fileSize, fileName):
         uploadMessage = self.upload
-        uploadMessage += (fileSize.to_bytes(4, 'big'))
+        uploadMessage += fileSize.to_bytes(4, 'big')
         uploadMessage += bytearray(fileName, 'utf-8')
         return uploadMessage
     
+    # Msg = Download + FileName
     def createDownloadMessage(self, fileName):
         downloadMessage = self.download
         downloadMessage += bytearray(fileName, 'utf-8') 
