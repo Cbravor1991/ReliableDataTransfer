@@ -1,19 +1,19 @@
 from socket import *
 
-class ClientUDP:
+class SocketUDP:
     def __init__(self) -> None:
         self.socket = socket(AF_INET, SOCK_DGRAM)
     
-    def startClient(self):
-        self.socket.bind(("localhost", 0))
+    def bindSocket(self, host, port):
+        self.socket.bind((host, port))
     
-    def receiveFrom(self):
+    def receiveFrom(self, bytesToReceive):
         # returns segment, clientAddress 
-        return self.socket.recvfrom(2048)
+        return self.socket.recvfrom(bytesToReceive)
 
     def sendTo(self, message, clientAddress):
-        self.socket.sendto(message, clientAddress)
+        self.socket.sendTo(message, clientAddress)
     
     def shutdown(self):
-        # define protocol
         pass
+
