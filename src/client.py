@@ -7,10 +7,21 @@ def main():
     serverAddress = ("localhost",12000)
     protocol = Protocol()
 
-    file_size = 8
+    message = 'ABCDEFGHI'
+    file_size = len(message)
     file_name = 'zbcd'
-    downloadMessage = protocol.createDownloadMessage(file_name)
-    #uploadMessage = protocol.createUploadMessage(file_size, file_name)
-    protocol.sendMessage(client, serverAddress, downloadMessage)
+
+    #UPLOAD
+    uploadMessage = protocol.createUploadMessage(file_size, file_name)
+    protocol.sendMessage(client, serverAddress, uploadMessage)
+
+    #DOWNLOAD
+    #downloadMessage = protocol.createDownloadMessage(file_name)
+    #protocol.sendMessage(client, serverAddress, downloadMessage)
+
+    #RECDATA
+    protocol.sendChunkMessage(client, serverAddress, message)
+
+   
 
 main()

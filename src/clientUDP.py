@@ -1,7 +1,7 @@
 from socket import *
 
 class ClientUDP:
-    def __init__(self) -> None:
+    def __init__(self):
         self.socket = socket(AF_INET, SOCK_DGRAM)
     
     def startClient(self):
