@@ -11,7 +11,8 @@ class Protocol:
         self.packageSize = 10
         self.recPackage = bytearray([3])
         self.MSS = 2
-        
+
+    # Msg = Upload + FileSize + FileName    
     def createUploadMessage(self, fileSize, fileName):
         uploadMessage = self.upload
         uploadMessage += fileSize.to_bytes(4, 'big')
@@ -24,10 +25,12 @@ class Protocol:
         downloadMessage += bytearray(fileName, 'utf-8') 
         return downloadMessage
 
-        # Msg = recPackage + Data
-    def createRecPackageMessage(self, index, dataSize, data):
+    # Msg = recPackage + CheckSum + Data
+    def createRecPackageMessage(self, index, dataSize, message):
+        data = message[index:(index+dataSize)]
         packageMessage = bytearray([3])
-        packageMessage += bytearray(data[index:(index+dataSize)], 'utf-8')
+        packageMessage += self.calculateCheckSum(data).to_bytes(2, 'big')
+        packageMessage += bytearray(data, 'utf-8')
         return packageMessage
 
     def processUploadSegment(self, segment):  
@@ -39,11 +42,12 @@ class Protocol:
         return (fileSize, fileName)
 
     def processRecPackageSegment(self, segment):
-        dataByte = segment[1:]
+        checkSum = int.from_bytes(segment[1:3], 'big')
+        dataByte = segment[3:]
         data = ""
         for i in range(0, len(dataByte)):
             data += chr(dataByte[i])
-        return (len(data), data)
+        return (checkSum, data)
 
     def processDownloadSegment(self, segment):  
         fileNameArray = segment[1:5]
@@ -59,10 +63,16 @@ class Protocol:
         segment, clientAddress = serverSocket.receiveFrom(2048)
         return segment
 
-
     def sendChunkMessage(self, clientSocket, serverAddress, message):
         for i in range(0, len(message), self.MSS):
             packageMessage = self.createRecPackageMessage(i, self.MSS, message)
             self.sendMessage(clientSocket, serverAddress, packageMessage)
 
-    
+    def calculateCheckSum(self, data):
+        checkSum = 0
+        for i in range(0, len(data)):
+            checkSum += ord(data[i])
+        return checkSum
+
+    def verifyCheckSum(self, checkSum, data):
+        return checkSum == self.calculateCheckSum(data)

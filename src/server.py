@@ -9,22 +9,33 @@ def main():
     serverSocket = SocketUDP()
     serverSocket.bindSocket("localhost", 12000)
     protocol = Protocol()
+    fileDownload = ""
 
     while True:
-
-        fileDownload = ""
-
+        
         segment = protocol.receive(serverSocket)
         command = segment[0]
 
         if command == UPLOAD:
             fileSize, fileName = protocol.processUploadSegment(segment)
             print('command {} fileSize {} fileName {}'.format(command, fileSize, fileName))
+        
         elif command == DOWNLOAD:
             fileName = protocol.processDownloadSegment(segment)
             print('command {} fileName {}'.format(command, fileName))
+        
         elif command == RECPACKAGE:
-            dataSize, data = protocol.processRecPackageSegment(segment)
+            checkSum, data = protocol.processRecPackageSegment(segment)
+            
+            if not (protocol.verifyCheckSum(checkSum, data)):
+                #CheckSum NOK
+                exit()
+            
+            print("CheckSum: OK")    
+            fileDownload += data
             if(len(fileDownload) == fileSize):
                 print('file {}'.format(fileDownload))
+                #Luego de enviar todo el mensaje tengo que vaciar el fileDownload
+                fileDownload = ""
+
 main()

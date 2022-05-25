@@ -8,14 +8,12 @@ def main():
     serverAddress = ("localhost",12000)
     protocol = Protocol()
 
-    file_size = 8
+    file_size = 4
     file_name = 'name'
-
-
-    downloadMessage = protocol.createDownloadMessage(file_name)
+    message = 'ABCD'
 
     uploadMessage = protocol.createUploadMessage(file_size, file_name)
-
     protocol.sendMessage(clientSocket, serverAddress, uploadMessage)
+    protocol.sendChunkMessage(clientSocket, serverAddress, message)
 
 main()
