@@ -26,16 +26,12 @@ def main():
         
         elif command == RECPACKAGE:
             checkSum, data = protocol.processRecPackageSegment(segment)
-            
             if not (protocol.verifyCheckSum(checkSum, data)):
-                #CheckSum NOK
                 exit()
             
-            print("CheckSum: OK")    
             fileDownload += data
             if(len(fileDownload) == fileSize):
                 print('file {}'.format(fileDownload))
-                #Luego de enviar todo el mensaje tengo que vaciar el fileDownload
                 fileDownload = ""
 
 main()

@@ -3,71 +3,53 @@ UploadMessage: 1 | fileSize | fileName
 DownloadMessage: 2 | fileName
 
 """
+
+from messageMaker import MessageMaker
+from messageProcessor import MessageProcessor
+
 class Protocol:
     
     def __init__(self):
-        self.upload = bytearray([1])
-        self.download = bytearray([2])
         self.packageSize = 10
-        self.recPackage = bytearray([3])
         self.MSS = 2
+        self.messageMaker = MessageMaker()
+        self.messageProcessor = MessageProcessor()
 
-    # Msg = Upload + FileSize + FileName    
+    # Create message
     def createUploadMessage(self, fileSize, fileName):
-        uploadMessage = self.upload
-        uploadMessage += fileSize.to_bytes(4, 'big')
-        uploadMessage += bytearray(fileName, 'utf-8')
-        return uploadMessage
-    
-    # Msg = Download + FileName
+        return self.messageMaker.createUploadMessage(fileSize, fileName)
+
     def createDownloadMessage(self, fileName):
-        downloadMessage = self.download
-        downloadMessage += bytearray(fileName, 'utf-8') 
-        return downloadMessage
+        return self.messageMaker.createDownloadMessage(fileName)
 
-    # Msg = recPackage + CheckSum + Data
     def createRecPackageMessage(self, index, dataSize, message):
-        data = message[index:(index+dataSize)]
-        packageMessage = bytearray([3])
-        packageMessage += self.calculateCheckSum(data).to_bytes(2, 'big')
-        packageMessage += bytearray(data, 'utf-8')
-        return packageMessage
-
+        return self.messageMaker.createRecPackageMessage(self, index, dataSize, message)
+    
+    # Process message
     def processUploadSegment(self, segment):  
-        fileSize = int.from_bytes(segment[1:5], 'big')
-        fileNameArray = segment[5:9]
-        fileName = ""
-        for i in range(0,4):
-            fileName += chr(fileNameArray[i])
-        return (fileSize, fileName)
-
-    def processRecPackageSegment(self, segment):
-        checkSum = int.from_bytes(segment[1:3], 'big')
-        dataByte = segment[3:]
-        data = ""
-        for i in range(0, len(dataByte)):
-            data += chr(dataByte[i])
-        return (checkSum, data)
+        return self.messageProcessor.processUploadSegment(segment)
 
     def processDownloadSegment(self, segment):  
-        fileNameArray = segment[1:5]
-        fileName = ""
-        for i in range(0,4):
-            fileName += chr(fileNameArray[i])
-        return fileName
+        return self.messageProcessor.processDownloadSegment(segment)
+    
+    def processRecPackageSegment(self, segment):
+        return self.messageProcessor.processRecPackageSegment(segment)
 
+    # Send message
     def sendMessage(self, clientSocket, serverAddress, message):
         clientSocket.sendTo(message, serverAddress)
     
-    def receive(self, serverSocket):
-        segment, clientAddress = serverSocket.receiveFrom(2048)
-        return segment
-
     def sendChunkMessage(self, clientSocket, serverAddress, message):
         for i in range(0, len(message), self.MSS):
             packageMessage = self.createRecPackageMessage(i, self.MSS, message)
             self.sendMessage(clientSocket, serverAddress, packageMessage)
+    
+    # Receive message
+    def receive(self, serverSocket):
+        segment, clientAddress = serverSocket.receiveFrom(2048)
+        return segment
 
+    # Checksum
     def calculateCheckSum(self, data):
         checkSum = 0
         for i in range(0, len(data)):
