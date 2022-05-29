@@ -1,22 +1,28 @@
 class MessageMaker:
 
-    # Msg = Upload + FileSize + FileName    
+    # Msg = typeUpload + FileSize + FileName    
     def createUploadMessage(self, fileSize, fileName):
         uploadMessage = bytearray([1])
         uploadMessage += fileSize.to_bytes(4, 'big')
         uploadMessage += bytearray(fileName, 'utf-8')
         return uploadMessage
     
-    # Msg = Download + FileName
+    # Msg = typeDownload + FileName
     def createDownloadMessage(self, fileName):
         downloadMessage = bytearray([2])
         downloadMessage += bytearray(fileName, 'utf-8') 
         return downloadMessage 
 
-    # Msg = recPackage + CheckSum + Data
-    def createRecPackageMessage(self, protocol, index, dataSize, message):
-        data = message[index:(index+dataSize)]
+    # Msg = typeRecPackage + sequenceNumber + CheckSum + Data
+    def createRecPackageMessage(self, sequenceNumber, checkSum, data):
         packageMessage = bytearray([3])
-        packageMessage += protocol.calculateCheckSum(data).to_bytes(2, 'big')
+        packageMessage += sequenceNumber.to_bytes(2, 'big')
+        packageMessage += checkSum.to_bytes(2, 'big')
         packageMessage += bytearray(data, 'utf-8')
-        return packageMessage 
+        return packageMessage
+
+    # Msg = typeACK + sequenceNumber
+    def createACKMessage(self, sequenceNumber):
+        ACKMessage = bytearray([4])
+        ACKMessage += sequenceNumber.to_bytes(2, 'big')
+        return ACKMessage

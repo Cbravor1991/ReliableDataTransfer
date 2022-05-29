@@ -10,8 +10,7 @@ from messageProcessor import MessageProcessor
 class Protocol:
     
     def __init__(self):
-        self.packageSize = 10
-        self.MSS = 2
+        self.sequenceNumber = 0
         self.messageMaker = MessageMaker()
         self.messageProcessor = MessageProcessor()
 
@@ -23,7 +22,13 @@ class Protocol:
         return self.messageMaker.createDownloadMessage(fileName)
 
     def createRecPackageMessage(self, index, dataSize, message):
-        return self.messageMaker.createRecPackageMessage(self, index, dataSize, message)
+        data = message[index:(index+dataSize)]
+        checkSum = self.calculateCheckSum(data)
+        self.sequenceNumber += 1
+        return self.messageMaker.createRecPackageMessage(self.sequenceNumber, checkSum, data)
+    
+    def createACKMessage(self, sequenceNumber):
+        return self.messageMaker.createACKMessage(sequenceNumber)
     
     # Process message
     def processUploadSegment(self, segment):  
@@ -34,20 +39,18 @@ class Protocol:
     
     def processRecPackageSegment(self, segment):
         return self.messageProcessor.processRecPackageSegment(segment)
+    
+    def processACKSegment(self, segment):
+        return self.messageProcessor.processACKSegment(segment)
 
     # Send message
     def sendMessage(self, clientSocket, serverAddress, message):
         clientSocket.sendTo(message, serverAddress)
     
-    def sendChunkMessage(self, clientSocket, serverAddress, message):
-        for i in range(0, len(message), self.MSS):
-            packageMessage = self.createRecPackageMessage(i, self.MSS, message)
-            self.sendMessage(clientSocket, serverAddress, packageMessage)
-    
     # Receive message
     def receive(self, serverSocket):
         segment, clientAddress = serverSocket.receiveFrom(2048)
-        return segment
+        return segment, clientAddress
 
     # Checksum
     def calculateCheckSum(self, data):

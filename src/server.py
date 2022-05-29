@@ -13,7 +13,7 @@ def main():
 
     while True:
         
-        segment = protocol.receive(serverSocket)
+        segment, clientAddress = protocol.receive(serverSocket)
         command = segment[0]
 
         if command == UPLOAD:
@@ -25,10 +25,15 @@ def main():
             print('command {} fileName {}'.format(command, fileName))
         
         elif command == RECPACKAGE:
-            checkSum, data = protocol.processRecPackageSegment(segment)
+            sequenceNumber, checkSum, data = protocol.processRecPackageSegment(segment)
             if not (protocol.verifyCheckSum(checkSum, data)):
                 exit()
             
+            print('Sequence number {}'.format(sequenceNumber))
+
+            ACKMessage = protocol.createACKMessage(sequenceNumber)
+            protocol.sendMessage(serverSocket, clientAddress, ACKMessage)
+
             fileDownload += data
             if(len(fileDownload) == fileSize):
                 print('file {}'.format(fileDownload))
