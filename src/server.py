@@ -21,15 +21,17 @@ class Server:
             segment, clientAddr = self.protocol.receive(self.serverSocket)
 
             if Decoder.isUpload(segment):
-                self.handleUpload(segment)
+                self.handleUpload(segment, clientAddr)
             elif Decoder.isDownload(segment):
-                self.handleDownload(segment)
+                self.handleDownload(segment, clientAddr)
             else:
                 raise Exception("Error: corrupt segment")
 
 
-    def handleUpload(self, segment):
+    def handleUpload(self, segment, clientAddr):
         fileSize, fileName = self.protocol.processUploadSegment(segment)
+        ACKMessage = self.protocol.createACKMessage(0)
+        self.protocol.sendMessage(self.serverSocket, clientAddr, ACKMessage)
         print('command {} fileSize {} fileName {}'.format(segment[0], fileSize, fileName))
         fileDownload = ""
     

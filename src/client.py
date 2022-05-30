@@ -18,15 +18,21 @@ def main():
     file_name = 'name'
     #path = './texto.txt'
     #file_size = fileHandler.getSizeFile(path)    
-
-    uploadMessage = protocol.createUploadMessage(file_size, file_name)
-    protocol.sendMessage(clientSocket, serverAddress, uploadMessage)
-
-    # Stop and Wait
-        # Envio segmento y espero el ACK
-        # Si no me llega el ACK -> Timeout -> Reenvio
-    
-    sequenceNumber = 1
+   
+    sequenceNumber = 0
+    while True:
+        uploadMessage = protocol.createUploadMessage(file_size, file_name)
+        protocol.sendMessage(clientSocket, serverAddress, uploadMessage)
+        try:
+            clientSocket.setTimeOut(0.5) 
+            segment, serverAddress = protocol.receive(clientSocket)
+            sequenceNumber = protocol.processACKSegment(segment)
+            print('ACK {}'.format(sequenceNumber))
+            sequenceNumber += 1
+            break
+        except:
+            pass
+        
     i = 0
     while i < len(message):
         packageMessage = protocol.createRecPackageMessage(i, MSS, message, sequenceNumber)
