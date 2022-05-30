@@ -38,10 +38,7 @@ class Decoder:
         sequenceNumber = int.from_bytes(segment[1:3], 'big')
         checkSum = int.from_bytes(segment[3:5], 'big')
         dataByte = segment[5:]
-        data = ""
-        for i in range(0, len(dataByte)):
-            data += chr(dataByte[i])
-        return sequenceNumber, checkSum, data
+        return sequenceNumber, checkSum, dataByte
     
     # Msg = typeACK + sequenceNumber
     def processACKSegment(self, segment):

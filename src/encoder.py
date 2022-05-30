@@ -1,9 +1,12 @@
-class Encoder:
+from struct import pack
 
+
+class Encoder:
+  
     # Msg = typeUpload + FileSize + FileName    
     def createUploadMessage(self, fileSize, fileName):
         uploadMessage = bytearray([1])
-        uploadMessage += fileSize.to_bytes(4, 'big')
+        uploadMessage += pack(">i",fileSize)
         uploadMessage += bytearray(fileName, 'utf-8')
         return uploadMessage
     
@@ -16,13 +19,13 @@ class Encoder:
     # Msg = typeRecPackage + sequenceNumber + CheckSum + Data
     def createRecPackageMessage(self, sequenceNumber, checkSum, data):
         packageMessage = bytearray([3])
-        packageMessage += sequenceNumber.to_bytes(2, 'big')
-        packageMessage += checkSum.to_bytes(2, 'big')
+        packageMessage += pack(">H",sequenceNumber)
+        packageMessage += pack(">H",checkSum)
         packageMessage += data
         return packageMessage
 
     # Msg = typeACK + sequenceNumber
     def createACKMessage(self, sequenceNumber):
         ACKMessage = bytearray([4])
-        ACKMessage += sequenceNumber.to_bytes(2, 'big')
+        ACKMessage += pack(">H",sequenceNumber)
         return ACKMessage

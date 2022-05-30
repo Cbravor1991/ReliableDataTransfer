@@ -1,3 +1,4 @@
+from socket import timeout
 from socketUDP import SocketUDP
 from protocol import Protocol
 from fileHandler import  FileHandler
@@ -12,9 +13,7 @@ def main():
     protocol = Protocol()
 
     fileHandler = FileHandler()
-    MSS = 2
-    message = 'ABCDEFGHIJKLMNO'
-    file_size = len(message)
+    MSS = 6
     file_name = 'name'
     path = './texto.txt'
     file_size = fileHandler.getSizeFile(path) 
@@ -36,19 +35,30 @@ def main():
         
     i = 0
     while i < file_size:
-        data = fileHandler.readFileBytes(file, MSS)
-        print(data)
+        data = fileHandler.readFileBytes(i, file, MSS)
+        print(data, file_size, i)
         packageMessage = protocol.createRecPackageMessage(data, sequenceNumber)
         protocol.sendMessage(clientSocket, serverAddress, packageMessage)
         try:
-            clientSocket.setTimeOut(0.5) #Que valor poner?
+            clientSocket.setTimeOut(1) #Que valor poner?
             segment, serverAddress = protocol.receive(clientSocket)
             sequenceNumber = protocol.processACKSegment(segment)
             print('ACK {}'.format(sequenceNumber))
             sequenceNumber += 1
-            i += MSS
-        except:
-            pass
+            print( "len(data) {}".format(len(data)))
+            i += len(data) if len(data) < MSS else MSS 
+        except timeout:
+            if clientSocket.connectionLost():
+                print("Connection lost")
+                break
+            print("timeout")
+ 
+            clientSocket.addTimeOut()
+        except Exception as e:
+            print("ERROR {}", e)
+
+
+    fileHandler.closeFile(file)
 
 
 main()
