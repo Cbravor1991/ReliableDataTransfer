@@ -10,7 +10,6 @@ from messageProcessor import MessageProcessor
 class Protocol:
     
     def __init__(self):
-        self.sequenceNumber = 0
         self.messageMaker = MessageMaker()
         self.messageProcessor = MessageProcessor()
 
@@ -21,11 +20,10 @@ class Protocol:
     def createDownloadMessage(self, fileName):
         return self.messageMaker.createDownloadMessage(fileName)
 
-    def createRecPackageMessage(self, index, dataSize, message):
+    def createRecPackageMessage(self, index, dataSize, message, sequenceNumber):
         data = message[index:(index+dataSize)]
         checkSum = self.calculateCheckSum(data)
-        self.sequenceNumber += 1
-        return self.messageMaker.createRecPackageMessage(self.sequenceNumber, checkSum, data)
+        return self.messageMaker.createRecPackageMessage(sequenceNumber, checkSum, data)
     
     def createACKMessage(self, sequenceNumber):
         return self.messageMaker.createACKMessage(sequenceNumber)
