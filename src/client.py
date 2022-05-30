@@ -1,9 +1,7 @@
-from msilib.schema import File
+#from msilib.schema import File
 from socketUDP import SocketUDP
 from protocol import Protocol
 from fileHandler import  FileHandler
-
-
 
 ACK = 4
 
@@ -32,24 +30,13 @@ def main():
     for i in range(0, len(message), MSS):
         packageMessage = protocol.createRecPackageMessage(i, MSS, message)
         protocol.sendMessage(clientSocket, serverAddress, packageMessage)
-        segment, serverAddress = protocol.receive(clientSocket)
+        try:
+            clientSocket.setTimeOut(10) #Que valor poner?
+            segment, serverAddress = protocol.receive(clientSocket)
+        except:
+            protocol.sendMessage(clientSocket, serverAddress, packageMessage)
         sequenceNumber = protocol.processACKSegment(segment)
         print('ACK {}'.format(sequenceNumber))
-        # Si no me llega el ACK luego de timeout tengo que reenviar => Falta implementar
-
-
-    #for i in range(0, file_size, MSS):
-    #    chunks = fileHandler.readFileBytes(path,i)
-    #    #ya estaria enviando los bytes
-    #    packageMessage = protocol.createRecPackageMessage(i, MSS, chunks)
-    #    protocol.sendMessage(clientSocket, serverAddress, packageMessage)
-    #    segment, serverAddress = protocol.receive(clientSocket)
-    #    sequenceNumber = protocol.processACKSegment(segment)
-    #    print('ACK {}'.format(sequenceNumber))
-    #    # Si no me llega el ACK luego de timeout tengo que reenviar => Falta implementar
-
-
-
     
 main()
 
