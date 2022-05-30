@@ -4,44 +4,44 @@ DownloadMessage: 2 | fileName
 
 """
 
-from messageMaker import MessageMaker
-from messageProcessor import MessageProcessor
+from encoder import Encoder
+from decoder import Decoder
 
 class Protocol:
     
     def __init__(self):
         self.sequenceNumber = 0
-        self.messageMaker = MessageMaker()
-        self.messageProcessor = MessageProcessor()
+        self.encoder = Encoder()
+        self.decoder = Decoder()
 
     # Create message
     def createUploadMessage(self, fileSize, fileName):
-        return self.messageMaker.createUploadMessage(fileSize, fileName)
+        return self.encoder.createUploadMessage(fileSize, fileName)
 
     def createDownloadMessage(self, fileName):
-        return self.messageMaker.createDownloadMessage(fileName)
+        return self.encoder.createDownloadMessage(fileName)
 
     def createRecPackageMessage(self, index, dataSize, message):
         data = message[index:(index+dataSize)]
         checkSum = self.calculateCheckSum(data)
         self.sequenceNumber += 1
-        return self.messageMaker.createRecPackageMessage(self.sequenceNumber, checkSum, data)
+        return self.encoder.createRecPackageMessage(self.sequenceNumber, checkSum, data)
     
     def createACKMessage(self, sequenceNumber):
-        return self.messageMaker.createACKMessage(sequenceNumber)
+        return self.encoder.createACKMessage(sequenceNumber)
     
     # Process message
     def processUploadSegment(self, segment):  
-        return self.messageProcessor.processUploadSegment(segment)
+        return self.decoder.processUploadSegment(segment)
 
     def processDownloadSegment(self, segment):  
-        return self.messageProcessor.processDownloadSegment(segment)
+        return self.decoder.processDownloadSegment(segment)
     
     def processRecPackageSegment(self, segment):
-        return self.messageProcessor.processRecPackageSegment(segment)
+        return self.decoder.processRecPackageSegment(segment)
     
     def processACKSegment(self, segment):
-        return self.messageProcessor.processACKSegment(segment)
+        return self.decoder.processACKSegment(segment)
 
     # Send message
     def sendMessage(self, clientSocket, serverAddress, message):

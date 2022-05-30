@@ -1,4 +1,20 @@
-class MessageProcessor:
+UPLOAD = 1
+DOWNLOAD = 2
+RECPACKAGE = 3
+ACK = 4
+
+class Decoder:
+    def isUpload(segment):
+        return segment[0] == UPLOAD
+    
+    def isDownload(segment):
+        return segment[0] == DOWNLOAD
+    
+    def isRecPackage(segment):
+        return segment[0] == RECPACKAGE
+    
+    def isACK(segment):
+        return segment[0] == ACK
 
     # Msg = typeUpload + FileSize + FileName    
     def processUploadSegment(self, segment):  

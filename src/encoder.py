@@ -1,4 +1,4 @@
-class MessageMaker:
+class Encoder:
 
     # Msg = typeUpload + FileSize + FileName    
     def createUploadMessage(self, fileSize, fileName):

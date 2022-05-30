@@ -1,42 +1,68 @@
+import threading
+import logging
+
 from socketUDP import SocketUDP
 from protocol import Protocol
+from decoder import Decoder
 
-UPLOAD = 1
-DOWNLOAD = 2
-RECPACKAGE = 3
 
-def main():
-    serverSocket = SocketUDP()
-    serverSocket.bindSocket("localhost", 12000)
-    protocol = Protocol()
-    fileDownload = ""
+class Server:
+    def __init__(self, addr, port):
+        self.addr = addr
+        self.port = port
+        self.connections = dict()
+        self.serverSocket = SocketUDP()
+        self.serverSocket.bindSocket(addr, port)
+        self.protocol = Protocol()
 
-    while True:
-        
-        segment, clientAddress = protocol.receive(serverSocket)
-        command = segment[0]
 
-        if command == UPLOAD:
-            fileSize, fileName = protocol.processUploadSegment(segment)
-            print('command {} fileSize {} fileName {}'.format(command, fileSize, fileName))
-        
-        elif command == DOWNLOAD:
-            fileName = protocol.processDownloadSegment(segment)
-            print('command {} fileName {}'.format(command, fileName))
-        
-        elif command == RECPACKAGE:
-            sequenceNumber, checkSum, data = protocol.processRecPackageSegment(segment)
-            if not (protocol.verifyCheckSum(checkSum, data)):
-                exit()
+    def start(self):
+        while True:
+            segment, clientAddr = self.protocol.receive(self.serverSocket)
+
+            if Decoder.isUpload(segment):
+                self.handleUpload(segment, clientAddr)
+            elif Decoder.isDownload(segment):
+                self.handleDownload(segment, clientAddr)
+            else:
+                raise Exception("Error: corrupt segment")
+
+
+    def handleUpload(self, segment, clientAddr):
+        fileSize, fileName = self.protocol.processUploadSegment(segment)
+        print('command {} fileSize {} fileName {}'.format(segment[0], fileSize, fileName))
+    
+        while True: # hasta terminar el upload o que haya algun error
+            fileDownload = ""
+
+            segment, clientAddr = self.protocol.receive(self.serverSocket)
+
+            if Decoder.isRecPackage(segment):
+                sequenceNumber, checkSum, data = self.protocol.processRecPackageSegment(segment)
+                if not (self.protocol.verifyCheckSum(checkSum, data)):
+                    exit()
+                
+                print('Sequence number {}'.format(sequenceNumber))
+
+                ACKMessage = self.protocol.createACKMessage(sequenceNumber)
+                self.protocol.sendMessage(self.serverSocket, clientAddr, ACKMessage)
+
+                fileDownload += data
+                if(len(fileDownload) == fileSize):
+                    print('file {}'.format(fileDownload))
+                    fileDownload = ""
+                    break
+
+
+    def handleDownload(self, segment, clientAddr):
+        fileName = self.protocol.processDownloadSegment(segment)
+        print('command {} fileName {}'.format(segment[0], fileName))
+
+        while True: # hasta terminar el download o que haya algun error
+            segment, clientAddr = self.protocol.receive(self.serverSocket)
+            if Decoder.isACK(segment):
+                pass
+
+    def shutdown(self):
+        self.serverSocket.shutdown()
             
-            print('Sequence number {}'.format(sequenceNumber))
-
-            ACKMessage = protocol.createACKMessage(sequenceNumber)
-            protocol.sendMessage(serverSocket, clientAddress, ACKMessage)
-
-            fileDownload += data
-            if(len(fileDownload) == fileSize):
-                print('file {}'.format(fileDownload))
-                fileDownload = ""
-
-main()
