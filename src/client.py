@@ -27,17 +27,19 @@ def main():
         # Si no me llega el ACK -> Timeout -> Reenvio
     
     sequenceNumber = 1
-    for i in range(0, len(message), MSS):
+    i = 0
+    while i < len(message):
         packageMessage = protocol.createRecPackageMessage(i, MSS, message, sequenceNumber)
         protocol.sendMessage(clientSocket, serverAddress, packageMessage)
         try:
-            clientSocket.setTimeOut(10) #Que valor poner?
+            clientSocket.setTimeOut(0.5) #Que valor poner?
             segment, serverAddress = protocol.receive(clientSocket)
             sequenceNumber = protocol.processACKSegment(segment)
             print('ACK {}'.format(sequenceNumber))
             sequenceNumber += 1
+            i += MSS
         except:
-            i = i - MSS
+            pass
 
 
 main()
