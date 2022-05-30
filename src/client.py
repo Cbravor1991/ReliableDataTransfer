@@ -16,8 +16,9 @@ def main():
     message = 'ABCDEFGHIJKLMNO'
     file_size = len(message)
     file_name = 'name'
-    #path = './texto.txt'
-    #file_size = fileHandler.getSizeFile(path)    
+    path = './texto.txt'
+    file_size = fileHandler.getSizeFile(path) 
+    file = fileHandler.openFile(path)
    
     sequenceNumber = 0
     while True:
@@ -34,8 +35,10 @@ def main():
             pass
         
     i = 0
-    while i < len(message):
-        packageMessage = protocol.createRecPackageMessage(i, MSS, message, sequenceNumber)
+    while i < file_size:
+        data = fileHandler.readFileBytes(file, MSS)
+        print(data)
+        packageMessage = protocol.createRecPackageMessage(data, sequenceNumber)
         protocol.sendMessage(clientSocket, serverAddress, packageMessage)
         try:
             clientSocket.setTimeOut(0.5) #Que valor poner?

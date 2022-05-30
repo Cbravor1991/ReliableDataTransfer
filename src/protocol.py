@@ -21,8 +21,8 @@ class Protocol:
     def createDownloadMessage(self, fileName):
         return self.encoder.createDownloadMessage(fileName)
 
-    def createRecPackageMessage(self, index, dataSize, message, sequenceNumber):
-        data = message[index:(index+dataSize)]
+    def createRecPackageMessage(self, data, sequenceNumber):
+       
         checkSum = self.calculateCheckSum(data)
         return self.encoder.createRecPackageMessage(sequenceNumber, checkSum, data)
     

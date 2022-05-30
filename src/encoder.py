@@ -18,7 +18,7 @@ class Encoder:
         packageMessage = bytearray([3])
         packageMessage += sequenceNumber.to_bytes(2, 'big')
         packageMessage += checkSum.to_bytes(2, 'big')
-        packageMessage += bytearray(data, 'utf-8')
+        packageMessage += data
         return packageMessage
 
     # Msg = typeACK + sequenceNumber
