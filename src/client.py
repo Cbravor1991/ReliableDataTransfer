@@ -24,16 +24,14 @@ def main():
     uploadMessage = protocol.createUploadMessage(file_size, file_name)
     protocol.sendMessage(clientSocket, serverAddress, uploadMessage)
 
-    # Stop and Wait (implementado en processAck):
-    #   Envio y espero ACK
-    #   Si no me llega ACK en timeout-> Reenviar
-    #   Si llega ACK -> Continuar
-    #   Si llega ACK y es el ultimo segmento -> Terminar
+    # Stop and Wait
+        # Envio segmento y espero el ACK
+        # Si no me llega el ACK -> Timeout -> Reenvio
 
     for i in range(0, len(message), MSS):
         packageMessage = protocol.createRecPackageMessage(i, MSS, message)
         protocol.sendMessage(clientSocket, serverAddress, packageMessage)
-        segment, serverAddress = protocol.receive(clientSocket) # Llamada bloqueante
+        segment, serverAddress = protocol.receive(clientSocket)
         sequenceNumber = protocol.processACKSegment(segment)
         print('ACK {}'.format(sequenceNumber))
         # Si no me llega el ACK luego de timeout tengo que reenviar => Falta implementar
