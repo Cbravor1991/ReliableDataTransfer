@@ -17,3 +17,5 @@ class SocketUDP:
     def shutdown(self):
         pass
 
+    def setTimeOut(self, time):
+        self.socket.settimeout(time)

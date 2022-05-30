@@ -21,11 +21,10 @@ class Protocol:
     def createDownloadMessage(self, fileName):
         return self.encoder.createDownloadMessage(fileName)
 
-    def createRecPackageMessage(self, index, dataSize, message):
+    def createRecPackageMessage(self, index, dataSize, message, sequenceNumber):
         data = message[index:(index+dataSize)]
         checkSum = self.calculateCheckSum(data)
-        self.sequenceNumber += 1
-        return self.encoder.createRecPackageMessage(self.sequenceNumber, checkSum, data)
+        return self.encoder.createRecPackageMessage(sequenceNumber, checkSum, data)
     
     def createACKMessage(self, sequenceNumber):
         return self.encoder.createACKMessage(sequenceNumber)
