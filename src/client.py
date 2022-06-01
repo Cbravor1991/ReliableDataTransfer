@@ -1,67 +1,59 @@
+import threading
+import logging
 from socket import timeout
+
+from regex import D
 from socketUDP import SocketUDP
 from protocol import Protocol
-from fileHandler import  FileHandler
+from fileHandler import FileHandler
 
-ACK = 4
 
-def main():
-    
-    clientSocket = SocketUDP()
-    clientSocket.bindSocket("localhost", 0)
-    serverAddress = ("localhost",12000)
-    protocol = Protocol()
+MSS = 6
 
-    fileHandler = FileHandler()
-    MSS = 6
-    file_name = 'name'
-    path = './texto.txt'
-    file_size = fileHandler.getSizeFile(path) 
-    file = fileHandler.openFile(path)
-   
-    sequenceNumber = 0
-    while True:
-        uploadMessage = protocol.createUploadMessage(file_size, file_name)
-        protocol.sendMessage(clientSocket, serverAddress, uploadMessage)
-        try:
-            clientSocket.setTimeOut(0.5) 
-            segment, serverAddress = protocol.receive(clientSocket)
-            sequenceNumber = protocol.processACKSegment(segment)
-            print('ACK {}'.format(sequenceNumber))
-            sequenceNumber += 1
-            break
-        except:
-            pass
-        
-    i = 0
-    while i < file_size:
-        data = fileHandler.readFileBytes(i, file, MSS)
-        print(data, file_size, i)
-        packageMessage = protocol.createRecPackageMessage(data, sequenceNumber)
-        protocol.sendMessage(clientSocket, serverAddress, packageMessage)
-        try:
-            clientSocket.setTimeOut(1) #Que valor poner?
-            segment, serverAddress = protocol.receive(clientSocket)
-            sequenceNumber = protocol.processACKSegment(segment)
-            print('ACK {}'.format(sequenceNumber))
-            sequenceNumber += 1
-            print( "len(data) {}".format(len(data)))
-            i += len(data) if len(data) < MSS else MSS 
-        except timeout:
-            if clientSocket.connectionLost():
-                print("Connection lost")
+
+class Client:
+    def __init__(self, addr, port):
+        self.clientSocket = SocketUDP()
+        self.clientSocket.bindSocket(addr, port)
+        self.protocol = Protocol()
+
+
+    def sendAndReceiveACK(self, msg, serverAddr):
+        while True:
+            self.protocol.sendMessage(self.clientSocket, serverAddr, msg)
+            try:
+                segment, _ = self.protocol.receive(self.clientSocket)
+                # que pasa si se recibe un paquete que no es ACK? deberia saltar excepcion en el decoder
+                sequenceNumber = self.protocol.processACKSegment(segment)
+                print('ACK {}'.format(sequenceNumber))
                 break
-            print("timeout")
- 
-            clientSocket.addTimeOut()
-        except Exception as e:
-            print("ERROR {}", e)
+            except timeout:
+                self.clientSocket.addTimeOut()
+                print("timeout") 
+        return sequenceNumber
 
+    def upload(self, fileName, file, fileSize, serverAddr):
+        self.clientSocket.setTimeOut(1) #Que valor poner?
 
-    fileHandler.closeFile(file)
+        uploadMessage = self.protocol.createUploadMessage(fileSize, fileName)
+        sequenceNumber = self.sendAndReceiveACK(uploadMessage, serverAddr)
 
+        uploaded = 0
+        while uploaded < fileSize:
+            data = FileHandler.readFileBytes(uploaded, file, MSS)
+            print(data, fileSize, uploaded)
+            packageMessage = self.protocol.createRecPackageMessage(data, sequenceNumber+1)
+            sequenceNumber = self.sendAndReceiveACK(packageMessage, serverAddr)
+            print( "len(data) {}".format(len(data)))
+            uploaded += min(len(data), MSS)
+        print("Upload finished")
 
-main()
+    def download(self, fileName, file, serverAddr):
+        self.clientSocket.setTimeOut(1)
+        downloadMessage = self.protocol.createDownloadMessage(fileName)
+        print("Download not implemented")
+        return
 
-
-
+    def shutdown(self):
+        self.clientSocket.shutdown()
+            
