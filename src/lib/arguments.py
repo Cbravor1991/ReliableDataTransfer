@@ -34,10 +34,7 @@ def parse_arguments():
         "-v",
         "--verbose",
         help="increase output verbosity",
-        dest="verbose",
-        type=int,
-        choices=[1, 2, 3],
-        default=1,
+        action="store_true"
     )
 
     parser.add_argument(
@@ -59,19 +56,20 @@ def parse_arguments():
         default= DEFAULT_PORT,
     )
 
+    validate_parse(parser.parse_args())
     return parser
 
 
 def parse_client_upload():
     parser = parse_arguments()
     parser.add_argument (
-         "-s",
+        "-s",
         "--src",
         help="source file path",
         dest="src",
         type=str,
         action="store",
-        required=True,
+        required=False,
         default= SRC,
     )
     
@@ -82,7 +80,8 @@ def parse_client_upload():
         dest="filename",
         type=str,
         action="store",
-        required=True,
+        required=False,
+        default="unknown"
     )
 
     return parser.parse_args()
@@ -97,7 +96,8 @@ def parse_client_download():
         dest="dst",
         type=str,
         action="store",
-        required=True,
+        required=False,
+        default="./",
     )
     parser.add_argument(
         "-n", "--name", help="filename", dest="filename", type=str, action="store"
@@ -113,7 +113,7 @@ def parse_server_start():
         dest="dest",
         type=str,
         action="store",
-        required=True,
+        required=False,
         default=DEST,
     )
     return parser.parse_args()
@@ -121,7 +121,9 @@ def parse_server_start():
 #implementado para manejar verbosity mas que nada que utiliza la libretia loggin
 def validate_parse(args):
     if args.verbose:
-        args.verbose = VERBOSITY[args.verbose]
+        logging.basicConfig(level=VERBOSITY[1])
+    else:
+        logging.basicConfig(level=VERBOSITY[2])
     if args.quiet:
         logging.disable(level=logging.CRITICAL + 1)
     if not args.host or not args.host.replace(".", "").isdigit():
@@ -131,12 +133,8 @@ def validate_parse(args):
             args.port = DEFAULT_PORT
     return args
 
-
 def main():
-    print ("imprimi esto")
-    args = parse_arguments().parse_args()
-    
-    print (args.port)
-    print(args.host)
+    args = parse_client_upload()
+    print(args)
 
 main()

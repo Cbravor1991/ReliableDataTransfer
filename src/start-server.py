@@ -1,8 +1,11 @@
-from server import Server
-
+import logging
+from lib.server import Server
+from lib.arguments import parse_server_start
 
 def main():
-    server = Server('localhost', 12000)
+    args = parse_server_start()
+    logging.info(f'storage: {args.dest}')
+    server = Server(args.host, args.port)
     try:
         server.start()
     except KeyboardInterrupt:

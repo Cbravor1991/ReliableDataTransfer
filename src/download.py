@@ -1,23 +1,21 @@
-from client import Client
-from fileHandler import FileHandler
+from yaml import parse
+from lib.client import Client
+from lib.fileHandler import FileHandler
+from lib.arguments import parse_client_download
 
 def main():
-    fileName = 'name'
-    path = './texto.txt'
-    fileSize = FileHandler.getFileSize(path) 
-    file = FileHandler.openFile(path)
+    args = parse_client_download()
 
-    serverAddr = ('localhost', 12000)
+    serverAddr = (args.host, args.port)
+
     client = Client('localhost', 0)
     try:
-        client.download(fileName, file, serverAddr)
+        client.download(args.filename, args.dst, serverAddr)
     except KeyboardInterrupt:
         print("Shutting down client...")
         client.shutdown()
         print("Client shut down")
     except Exception as e:
         print(e)
-
-    FileHandler.closeFile(file)
 
 main()

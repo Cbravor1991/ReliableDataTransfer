@@ -3,9 +3,9 @@ import logging
 from socket import timeout
 
 from regex import D
-from socketUDP import SocketUDP
-from protocol import Protocol
-from fileHandler import FileHandler
+from lib.socketUDP import SocketUDP
+from lib.protocol import Protocol
+from lib.fileHandler import FileHandler
 
 
 MSS = 6
@@ -32,6 +32,7 @@ class Client:
                 print("timeout") 
         return sequenceNumber
 
+
     def upload(self, fileName, file, fileSize, serverAddr):
         self.clientSocket.setTimeOut(1) #Que valor poner?
 
@@ -48,8 +49,9 @@ class Client:
             uploaded += min(len(data), MSS)
         print("Upload finished")
 
+
     def download(self, fileName, file, serverAddr):
-        self.clientSocket.setTimeOut(1)
+        self.clientSocket.setTimeOut(1) 
         downloadMessage = self.protocol.createDownloadMessage(fileName)
         print("Download not implemented")
         return

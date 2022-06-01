@@ -1,9 +1,9 @@
 import threading
 import logging
 
-from socketUDP import SocketUDP
-from protocol import Protocol
-from decoder import Decoder
+from lib.socketUDP import SocketUDP
+from lib.protocol import Protocol
+from lib.decoder import Decoder
 
 
 class Server:

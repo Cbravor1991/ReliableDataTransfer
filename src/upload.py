@@ -1,16 +1,18 @@
-from client import Client
-from fileHandler import FileHandler
+from lib.client import Client
+from lib.fileHandler import FileHandler
+from lib.arguments import parse_client_upload
 
 def main():
-    fileName = 'name'
-    path = './texto.txt'
-    fileSize = FileHandler.getFileSize(path) 
-    file = FileHandler.openFile(path)
+    args = parse_client_upload()
+    print(args.filename)
+    
+    fileSize = FileHandler.getFileSize(args.src) 
+    file = FileHandler.openFile(args.src)
+    serverAddr = (args.host, args.port)
 
-    serverAddr = ('localhost', 12000)
     client = Client('localhost', 0)
     try:
-        client.upload(fileName, file, fileSize, serverAddr)
+        client.upload(args.filename, file, fileSize, serverAddr)
     except KeyboardInterrupt:
         print("Shutting down client...")
         client.shutdown()
