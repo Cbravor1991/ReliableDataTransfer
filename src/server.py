@@ -33,26 +33,30 @@ class Server:
         ACKMessage = self.protocol.createACKMessage(0)
         self.protocol.sendMessage(self.serverSocket, clientAddr, ACKMessage)
         print('command {} fileSize {} fileName {}'.format(segment[0], fileSize, fileName))
-        fileDownload = ""
-    
+        fileDownload = []
+        last_seq = 0
         while True: # hasta terminar el upload o que haya algun error
 
             segment, clientAddr = self.protocol.receive(self.serverSocket)
-
+            
             if Decoder.isRecPackage(segment):
                 sequenceNumber, checkSum, data = self.protocol.processRecPackageSegment(segment)
-                if not (self.protocol.verifyCheckSum(checkSum, data)):
-                    exit()
-                
+                # if not (self.protocol.verifyCheckSum(checkSum, data)):
+                #     exit()
                 print('Sequence number {}'.format(sequenceNumber))
 
                 ACKMessage = self.protocol.createACKMessage(sequenceNumber)
                 self.protocol.sendMessage(self.serverSocket, clientAddr, ACKMessage)
 
-                fileDownload += data
+                if sequenceNumber > last_seq:
+                      fileDownload += data
+
                 if(len(fileDownload) == fileSize):
                     print('file {}'.format(fileDownload))
                     break
+                last_seq = sequenceNumber
+                    
+            
 
 
     def handleDownload(self, segment):

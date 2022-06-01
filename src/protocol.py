@@ -55,7 +55,7 @@ class Protocol:
     def calculateCheckSum(self, data):
         checkSum = 0
         for i in range(0, len(data)):
-            checkSum += ord(data[i])
+            checkSum += data[i]
         return checkSum
 
     def verifyCheckSum(self, checkSum, data):

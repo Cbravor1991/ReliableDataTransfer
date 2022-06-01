@@ -15,8 +15,8 @@ class FileHandler:
 
     
 
-    def readFileBytes(self, file, bytesToRead):
+    def readFileBytes(self, pos, file, bytesToRead):
+        file.seek(pos)
         contents = file.read(bytesToRead)
-
         return contents
 
