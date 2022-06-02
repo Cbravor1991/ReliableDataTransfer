@@ -2,7 +2,6 @@ import threading
 import logging
 from socket import timeout
 
-from regex import D
 from lib.socketUDP import SocketUDP
 from lib.protocol import Protocol
 from lib.fileHandler import FileHandler
