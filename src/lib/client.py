@@ -1,3 +1,4 @@
+from fileinput import filename
 import threading
 import logging
 from socket import timeout
@@ -60,11 +61,7 @@ class Client:
         while morePackages:
 
             segment, serverAddr = self.protocol.receive(self.clientSocket)
-            sequenceNumber, morePackages, checkSum, data = self.protocol.processDownloadPackageSegment(segment)
-            if not (self.protocol.verifyCheckSum(checkSum, data)):
-                print("Corrupt segment: checksum error")
-                continue
-
+            sequenceNumber, morePackages, data = self.protocol.processDownloadPackageSegment(segment)
             print('Sequence number {}'.format(sequenceNumber))
 
             ACKMessage = self.protocol.createACKMessage(sequenceNumber)

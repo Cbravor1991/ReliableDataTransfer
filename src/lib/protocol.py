@@ -25,8 +25,7 @@ class Protocol:
         return self.encoder.createRecPackageMessage(sequenceNumber, data)
     
     def createDownloadPackageMessage(self, data, sequenceNumber, m):
-        checkSum = self.calculateCheckSum(data)
-        return self.encoder.createDownloadPackageMessage(sequenceNumber, m, checkSum, data)
+        return self.encoder.createDownloadPackageMessage(sequenceNumber, m, data)
 
     def createACKMessage(self, sequenceNumber):
         return self.encoder.createACKMessage(sequenceNumber)
