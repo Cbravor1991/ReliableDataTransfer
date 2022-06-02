@@ -146,16 +146,17 @@ class Sender:
     def start(self):
         self.socket.bindSocket("localhost", 0)
         print(self.file_size)
-        #uploadMsg = self.protocol.createUploadMessage(self.file_size, "Elnombredelarchivo")
-        #while True:
-        #    self.socket.setTimeOut(1)
-        #    try:
-        #        self.protocol.sendMessage(self.socket, self.serverAddress, uploadMsg)
-        #        segment, clientAddr = self.protocol.receive(self.socket)
-        #        sequenceNumber = self.protocol.processACKSegment(segment)
-        #        break
-        #    except Exception as e:
-        #        print("Timeout {}".format(e))
+        uploadMsg = self.protocol.createUploadMessage(self.file_size, "Elnombredelarchivo")
+        
+        while True:
+            self.socket.setTimeOut(1)
+            try:
+                self.protocol.sendMessage(self.socket, self.serverAddress, uploadMsg)
+                segment, clientAddr = self.protocol.receive(self.socket)
+                sequenceNumber = self.protocol.processACKSegment(segment)
+                break
+            except Exception as e:
+                print("Timeout {}".format(e))
 
 
         self.rec_thread.start()
@@ -163,3 +164,5 @@ class Sender:
 
         self.send_thread.join()
         self.rec_thread.join()
+    
+    

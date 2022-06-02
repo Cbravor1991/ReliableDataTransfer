@@ -1,28 +1,44 @@
 import threading
 import logging
 from socket import timeout
-
+from lib.selectiveRepeat import SelectiveRepeat
 from lib.socketUDP import SocketUDP
 from lib.protocol import Protocol
 from lib.decoder import Decoder
 from lib.fileHandler import FileHandler
 
 class Server:
-    def __init__(self, addr, port, dstPath):
+    def __init__(self, addr, port, dstPath, transferMethod):
         self.connections = dict()
         self.dstPath = dstPath
         self.serverSocket = SocketUDP()
         self.serverSocket.bindSocket(addr, port)
         self.protocol = Protocol()
+        self.transferMethod = transferMethod
+
+        
 
 
-    def start(self):
+    def stopAndWait(self):
+        print("Stop and wait")
         while True:
             segment, clientAddr = self.protocol.receive(self.serverSocket)
             if Decoder.isUpload(segment):
                 self.handleUpload(segment, clientAddr)
             elif Decoder.isDownload(segment):
                 self.handleDownload(segment, clientAddr)
+
+
+    def selectiveRepeat(self):
+        while True:
+            segment, clientAddr = self.protocol.receive(self.serverSocket)
+            if Decoder.isUpload(segment):
+                self.transferMethod.sender.start()
+            elif Decoder.isDownload(segment):
+                self.transferMethod.receiver.start()
+
+
+
 
 
     def handleUpload(self, segment, clientAddr):
@@ -49,6 +65,8 @@ class Server:
                     transferred += len(data)
                     file.write(data)
                 prevSequenceNumber = sequenceNumber
+            elif Decoder.isUpload(segment):
+                self.protocol.sendMessage(self.serverSocket, clientAddr, ACKMessage)
 
         FileHandler.closeFile(file)
         print('Upload finished')               
@@ -56,6 +74,7 @@ class Server:
 
     def sendAndReceiveACK(self, msg, clientAddr):
         while True:
+            self.serverSocket.setTimeOut(1)
             self.protocol.sendMessage(self.serverSocket, clientAddr, msg)
             try:
                 segment, _ = self.protocol.receive(self.serverSocket)
@@ -68,10 +87,15 @@ class Server:
         return sequenceNumber
 
 
+
+
     def handleDownload(self, segment, clientAddr):
         MSS = 6
 
         fileName = self.protocol.processDownloadSegment(segment)
+        ACKMessage = self.protocol.createACKMessage(0)
+        self.protocol.sendMessage(self.serverSocket, clientAddr, ACKMessage)
+
         print('command {} fileName {}'.format(segment[0], fileName))
         path = self.dstPath + fileName
         try:

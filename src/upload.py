@@ -1,6 +1,8 @@
 from lib.client import Client
 from lib.fileHandler import FileHandler
 from lib.arguments import parse_client_upload
+from lib.selectiveRepeat import SelectiveRepeat
+from lib.stopAndWait import StopAndWait
 
 def main():
     args = parse_client_upload()
@@ -9,9 +11,15 @@ def main():
     file = FileHandler.openFile(args.src)
     serverAddr = (args.host, args.port)
 
-    client = Client('localhost', 0)
+    if (args.protocol.value == 'selectiveRepeat'):
+        client = Client('localhost', 0, SelectiveRepeat())
+    else:
+        client = Client('localhost', 0, StopAndWait())
+
+
     try:
         client.upload(args.filename, file, fileSize, serverAddr)
+
     except KeyboardInterrupt:
         print("Shutting down client...")
     except Exception as e:

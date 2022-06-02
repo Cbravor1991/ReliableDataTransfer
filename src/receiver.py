@@ -1,3 +1,4 @@
+from lib.decoder import Decoder
 from lib.protocol import Protocol
 from lib.socketUDP import SocketUDP
 import math
@@ -23,49 +24,45 @@ class Receiver:
 
 
     def receive(self):
-
-        
-        #segment, clientAddr = self.protocol.receive(self.socket)
-        #fileSize, fileName = self.protocol.processUploadSegment(segment)
-        #ACKMessage = self.protocol.createACKMessage(0)
-        #self.protocol.sendMessage(self.socket, clientAddr, ACKMessage)
-        fileName = "Elarhivo0.pdf"
-        fileSize = 458533
-
+        segment, clientAddr = self.protocol.receive(self.socket)
+        fileSize, fileName = self.protocol.processUploadSegment(segment)
+        ACKMessage = self.protocol.createACKMessage(0)
+        self.protocol.sendMessage(self.socket, clientAddr, ACKMessage)
         file = open(fileName, "wb")
         counter = 0
         self.messagesBuffer = [False for i in range(math.ceil(fileSize/200))]
         while counter < math.ceil(fileSize/200):
 
             segment, clientAddr = self.protocol.receive(self.socket)
+            if (Decoder.isRecPackage(segment)):
+                seqNum, data = self.protocol.processRecPackageSegment(segment)
 
-            seqNum, data = self.protocol.processRecPackageSegment(segment)
+                if (seqNum >= self.window_start and
+                seqNum < self.window_size + self.window_start):
 
-            if (seqNum >= self.window_start and
-               seqNum < self.window_size + self.window_start):
-
-                ACKMessage = self.protocol.createACKMessage(seqNum)
+                    ACKMessage = self.protocol.createACKMessage(seqNum)
+                    self.protocol.sendMessage(self.socket, clientAddr, ACKMessage)
+                    print('Sequence number {}, data: {}'
+                        .format(seqNum, data))
+                    self.messagesBuffer[seqNum] = data
+                    if (seqNum == self.window_start):
+                        counter += 1
+                        file.write(self.messagesBuffer[seqNum])
+                        self.window_start += 1
+                        i = self.window_start
+                        while i < self.getTopOfWindow(fileSize):
+                            if (self.messagesBuffer[i] is not False):
+                                self.window_start += 1
+                                counter += 1
+                                file.write(self.messagesBuffer[i])
+                            else:
+                                break
+                            i += 1
+                elif (seqNum < self.window_start):
+                    ACKMessage = self.protocol.createACKMessage(seqNum)
+                    self.protocol.sendMessage(self.socket, clientAddr, ACKMessage)
+                else:
+                    pass
+            elif (Decoder.isUpload(segment)):
                 self.protocol.sendMessage(self.socket, clientAddr, ACKMessage)
-                print('Sequence number {}, data: {}'
-                      .format(seqNum, data))
-                self.messagesBuffer[seqNum] = data
-                if (seqNum == self.window_start):
-                    counter += 1
-                    file.write(self.messagesBuffer[seqNum])
-                    self.window_start += 1
-                    i = self.window_start
-                    while i < self.getTopOfWindow(fileSize):
-                        if (self.messagesBuffer[i] is not False):
-                            self.window_start += 1
-                            counter += 1
-                            file.write(self.messagesBuffer[i])
-                        else:
-                            break
-                        i += 1
-            elif (seqNum < self.window_start):
-                ACKMessage = self.protocol.createACKMessage(seqNum)
-                self.protocol.sendMessage(self.socket, clientAddr, ACKMessage)
-            else:
-                pass
-            print(counter)
         file.close()

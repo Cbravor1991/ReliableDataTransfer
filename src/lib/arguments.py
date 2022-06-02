@@ -10,7 +10,7 @@ VERBOSITY = {1: logging.DEBUG, 2: logging.INFO, 3: logging.ERROR}
 
 class protocol_type(Enum):
     SW = "stop&wait"
-    SP = "selectiveRepeact"
+    SP = "selectiveRepeat"
 
     def __str__(self):
         return self.value
