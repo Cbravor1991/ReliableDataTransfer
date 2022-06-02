@@ -1,4 +1,3 @@
-from operator import ne
 import threading
 import logging
 from socket import timeout
