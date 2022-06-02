@@ -4,8 +4,8 @@ DownloadMessage: 2 | fileName
 
 """
 
-from encoder import Encoder
-from decoder import Decoder
+from lib.encoder import Encoder
+from lib.decoder import Decoder
 
 class Protocol:
     

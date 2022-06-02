@@ -1,13 +1,19 @@
-from server import Server
-
+import logging
+from lib.server import Server
+from lib.arguments import parse_server_start
 
 def main():
-    server = Server('localhost', 12000)
+    args = parse_server_start()
+    server = Server(args.host, args.port)
     try:
         server.start()
     except KeyboardInterrupt:
         print("Shutting down server...")
-        server.shutdown()
-        print("Server shut down")
+    except Exception as e:
+        print(e)
+
+    server.shutdown()
+    print("Server shut down")
+
 
 main()

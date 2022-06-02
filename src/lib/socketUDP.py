@@ -1,5 +1,6 @@
-from logging import shutdown
 from socket import *
+
+N_TIMEOUTS = 5
 
 class SocketUDP:
     def __init__(self):
@@ -21,10 +22,8 @@ class SocketUDP:
     
     def addTimeOut(self):
         self.tryTimeOuts += 1
-
-    def connectionLost(self):
-        if self.tryTimeOuts >= 5:
-            shutdown()
+        if self.tryTimeOuts >= N_TIMEOUTS:
+            raise Exception('Timeouts exceeded')
 
     def setTimeOut(self, time):
         self.socket.settimeout(time)
