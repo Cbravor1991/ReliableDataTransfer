@@ -56,7 +56,7 @@ def parse_arguments():
         default= DEFAULT_PORT,
     )
 
-    validate_parse(parser.parse_args())
+    
     return parser
 
 
@@ -84,7 +84,7 @@ def parse_client_upload():
         default="unknown"
     )
 
-    return parser.parse_args()
+    return validate_parse(parser.parse_args())
 
 
 def parse_client_download():
@@ -102,7 +102,7 @@ def parse_client_download():
     parser.add_argument(
         "-n", "--name", help="filename", dest="filename", type=str, action="store"
     )
-    return parser.parse_args()
+    return  validate_parse(parser.parse_args())
 
 def parse_server_start():
     parser = parse_arguments()
@@ -116,7 +116,7 @@ def parse_server_start():
         required=False,
         default=DEST,
     )
-    return parser.parse_args()
+    return validate_parse( parser.parse_args())
 
 #implementado para manejar verbosity mas que nada que utiliza la libretia loggin
 def validate_parse(args):
