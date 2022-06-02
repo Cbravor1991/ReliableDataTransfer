@@ -1,4 +1,5 @@
 import math
+from socket import socket
 from threading import Timer
 from time import sleep
 from lib.socketUDP import SocketUDP
@@ -17,7 +18,7 @@ class Sender:
         self.file_transfered = 0
         self.currSeqNum = 0
         self.lock = threading.Lock()
-        self.MSS = 600
+        self.MSS = 200
         self.messagesBuffer = [False for i in range(math.ceil(self.file_size/self.MSS))]
         self.timers = [False for i in range(math.ceil(self.file_size/self.MSS))]
         self.socket = SocketUDP()
@@ -30,7 +31,7 @@ class Sender:
     def callFromTimeout(self, index):
         if (self.messagesBuffer[index] is not False):
            
-            if (index < self.window_start):
+            if (index < self.window_start or self.messagesBuffer[index] == "buffered"):
                 self.stop_timer(index)
             else:
                 logging.warning("Timeout")
@@ -144,8 +145,19 @@ class Sender:
 
     def start(self):
         self.socket.bindSocket("localhost", 0)
+        print(self.file_size)
+        #uploadMsg = self.protocol.createUploadMessage(self.file_size, "Elnombredelarchivo")
+        #while True:
+        #    self.socket.setTimeOut(1)
+        #    try:
+        #        self.protocol.sendMessage(self.socket, self.serverAddress, uploadMsg)
+        #        segment, clientAddr = self.protocol.receive(self.socket)
+        #        sequenceNumber = self.protocol.processACKSegment(segment)
+        #        break
+        #    except Exception as e:
+        #        print("Timeout {}".format(e))
 
-        
+
         self.rec_thread.start()
         self.send_thread.start()
 
