@@ -1,7 +1,6 @@
 import os.path
 from os import path
 
-from regex import E
 
 class FileHandler:
     def getFileSize (path):
