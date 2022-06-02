@@ -1,6 +1,6 @@
 from socket import *
 
-N_TIMEOUTS = 5
+N_TIMEOUTS = 10000
 
 class SocketUDP:
     def __init__(self):
