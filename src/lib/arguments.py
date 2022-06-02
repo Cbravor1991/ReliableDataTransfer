@@ -81,7 +81,7 @@ def parse_client_upload():
         type=str,
         action="store",
         required=False,
-        default="unknown"
+        default="unknown",
     )
 
     return validate_parse(parser.parse_args())
@@ -100,7 +100,12 @@ def parse_client_download():
         default="./",
     )
     parser.add_argument(
-        "-n", "--name", help="filename", dest="filename", type=str, action="store"
+        "-n", "--name", 
+        help="filename",
+        dest="filename",
+        type=str,
+        action="store",
+        default='unknown'
     )
     return  validate_parse(parser.parse_args())
 
@@ -132,9 +137,3 @@ def validate_parse(args):
         if args.port < 1024 or args.port > 65535:
             args.port = DEFAULT_PORT
     return args
-
-def main():
-    args = parse_client_upload()
-    print(args)
-
-main()

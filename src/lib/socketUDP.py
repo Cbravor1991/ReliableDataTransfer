@@ -23,7 +23,6 @@ class SocketUDP:
     def addTimeOut(self):
         self.tryTimeOuts += 1
         if self.tryTimeOuts >= N_TIMEOUTS:
-            self.shutdown()
             raise Exception('Timeouts exceeded')
 
     def setTimeOut(self, time):
