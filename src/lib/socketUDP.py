@@ -15,7 +15,10 @@ class SocketUDP:
         return self.socket.recvfrom(bytesToReceive)
 
     def sendTo(self, message, clientAddress):
-        self.socket.sendto(message, clientAddress)
+        try:
+            self.socket.sendto(message, clientAddress)
+        except TypeError:
+            print("Tried to send a {} message".format(message))
     
     def shutdown(self):
         self.socket.close()
