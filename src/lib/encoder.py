@@ -23,6 +23,15 @@ class Encoder:
         packageMessage += data
         return packageMessage
 
+    # Msg = typeRecPackage + sequenceNumber + M + CheckSum + Data
+    def createDownloadPackageMessage(self, sequenceNumber, m, checkSum, data):
+        packageMessage = bytearray([3])
+        packageMessage += pack(">H",sequenceNumber)
+        packageMessage += pack(">B",m)
+        packageMessage += pack(">H",checkSum)
+        packageMessage += data
+        return packageMessage
+
     # Msg = typeACK + sequenceNumber
     def createACKMessage(self, sequenceNumber):
         ACKMessage = bytearray([4])

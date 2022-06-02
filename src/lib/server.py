@@ -1,14 +1,17 @@
+from operator import ne
 import threading
 import logging
+from socket import timeout
 
 from lib.socketUDP import SocketUDP
 from lib.protocol import Protocol
 from lib.decoder import Decoder
-
+from lib.fileHandler import FileHandler
 
 class Server:
-    def __init__(self, addr, port):
+    def __init__(self, addr, port, dstPath):
         self.connections = dict()
+        self.dstPath = dstPath
         self.serverSocket = SocketUDP()
         self.serverSocket.bindSocket(addr, port)
         self.protocol = Protocol()
@@ -37,8 +40,6 @@ class Server:
             segment, clientAddr = self.protocol.receive(self.serverSocket)
             if Decoder.isRecPackage(segment):            
                 sequenceNumber, data = self.protocol.processRecPackageSegment(segment)
-
-
                 print('Sequence number {}'.format(sequenceNumber))
 
                 ACKMessage = self.protocol.createACKMessage(sequenceNumber)
@@ -51,14 +52,42 @@ class Server:
         print('file {}'.format(fileDownload))               
 
 
-    def handleDownload(self, segment):
+    def sendAndReceiveACK(self, msg, clientAddr):
+        while True:
+            self.protocol.sendMessage(self.serverSocket, clientAddr, msg)
+            try:
+                segment, _ = self.protocol.receive(self.serverSocket)
+                sequenceNumber = self.protocol.processACKSegment(segment)
+                print('ACK {}'.format(sequenceNumber))
+                break
+            except timeout:
+                self.serverSocket.addTimeOut()
+                print("timeout") 
+        return sequenceNumber
+
+
+    def handleDownload(self, segment, clientAddr):
+        MSS = 6
+
         fileName = self.protocol.processDownloadSegment(segment)
         print('command {} fileName {}'.format(segment[0], fileName))
+        path = self.dstPath + fileName
+        file = FileHandler.openFile(path)
+        fileSize = FileHandler.getFileSize(path)
 
-        while True: # hasta terminar el download o que haya algun error
-            segment, clientAddr = self.protocol.receive(self.serverSocket)
-            if Decoder.isACK(segment):
-                pass
+        sequenceNumber = 0
+        sent = 0
+        morePackages = True
+        while sent < fileSize:
+            data = FileHandler.readFileBytes(sent, file, MSS)
+            sent += min(len(data), MSS)
+            morePackages = len(data) == MSS
+            packageMessage = self.protocol.createDownloadPackageMessage(data, sequenceNumber+1, morePackages)
+            sequenceNumber = self.sendAndReceiveACK(packageMessage, clientAddr)
+
+        print("File transfer finished")
+        FileHandler.closeFile(file)
+
 
     def shutdown(self):
         self.serverSocket.shutdown()

@@ -50,12 +50,34 @@ class Client:
         print("Upload finished")
 
 
-    def download(self, fileName, file, serverAddr):
+    def download(self, fileName, path, serverAddr):
         self.clientSocket.setTimeOut(1) 
         downloadMessage = self.protocol.createDownloadMessage(fileName)
-        print("Download not implemented")
-        return
+        self.protocol.sendMessage(self.clientSocket, serverAddr, downloadMessage)
+        
+        downloaded = []
+        prevSequenceNumber = 0
+        morePackages = True
+        while morePackages:
 
+            segment, serverAddr = self.protocol.receive(self.clientSocket)
+            sequenceNumber, morePackages, checkSum, data = self.protocol.processDownloadPackageSegment(segment)
+            if not (self.protocol.verifyCheckSum(checkSum, data)):
+                print("Corrupt segment: checksum error")
+                continue
+
+            print('Sequence number {}'.format(sequenceNumber))
+
+            ACKMessage = self.protocol.createACKMessage(sequenceNumber)
+            self.protocol.sendMessage(self.clientSocket, serverAddr, ACKMessage)
+
+            if sequenceNumber > prevSequenceNumber:
+                downloaded += data
+            prevSequenceNumber = sequenceNumber
+
+        print('file {}'.format(downloaded)) 
+        
+              
     def shutdown(self):
         self.clientSocket.shutdown()
             

@@ -24,6 +24,10 @@ class Protocol:
     def createRecPackageMessage(self, data, sequenceNumber): 
         return self.encoder.createRecPackageMessage(sequenceNumber, data)
     
+    def createDownloadPackageMessage(self, data, sequenceNumber, m):
+        checkSum = self.calculateCheckSum(data)
+        return self.encoder.createDownloadPackageMessage(sequenceNumber, m, checkSum, data)
+
     def createACKMessage(self, sequenceNumber):
         return self.encoder.createACKMessage(sequenceNumber)
     
@@ -36,7 +40,10 @@ class Protocol:
     
     def processRecPackageSegment(self, segment):
         return self.decoder.processRecPackageSegment(segment)
-    
+
+    def processDownloadPackageSegment(self, segment):
+        return self.decoder.processDownloadPackageSegment(segment)
+
     def processACKSegment(self, segment):
         return self.decoder.processACKSegment(segment)
 

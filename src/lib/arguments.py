@@ -97,7 +97,7 @@ def parse_client_download():
         type=str,
         action="store",
         required=False,
-        default="./",
+        default="../",
     )
     parser.add_argument(
         "-n", "--name", 
@@ -105,7 +105,7 @@ def parse_client_download():
         dest="filename",
         type=str,
         action="store",
-        default='unknown'
+        default='texto.txt'
     )
     return  validate_parse(parser.parse_args())
 
