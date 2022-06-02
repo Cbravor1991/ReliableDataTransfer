@@ -2,6 +2,7 @@ import logging
 from lib.server import Server
 from lib.arguments import parse_server_start
 
+
 def main():
     args = parse_server_start()
     server = Server(args.host, args.port)
