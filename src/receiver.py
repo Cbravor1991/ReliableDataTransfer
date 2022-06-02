@@ -4,14 +4,14 @@ from lib.socketUDP import SocketUDP
 
 class Receiver:
     def __init__(self):
-        self.window_size = 5
+        self.window_size = 200
         self.window_start = 0
         self.messagesBuffer = [False for i in range(50000)]
         self.socket = SocketUDP()
         self.protocol = Protocol()
 
     def bindSocket(self, host, port):
-        self.socket.bindSocket("localhost", 12000)
+        self.socket.bindSocket(host, port)
 
     def receive(self):
         while True:
@@ -41,3 +41,4 @@ class Receiver:
                 self.protocol.sendMessage(self.socket, clientAddr, ACKMessage)
             else:
                 pass
+            
