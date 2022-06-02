@@ -1,10 +1,10 @@
 
 from threading import Timer
 from time import sleep
-from socketUDP import SocketUDP
-from protocol import Protocol
+from lib.socketUDP import SocketUDP
+from lib.protocol import Protocol
 import threading
-from fileHandler import FileHandler
+from lib.fileHandler import FileHandler
 
 class Sender:
     def __init__(self):
@@ -16,9 +16,8 @@ class Sender:
         self.socket = SocketUDP()
         self.protocol = Protocol()
         self.serverAddress = ("localhost",12000)
-        self.fileHandler = FileHandler()
-        self.file = self.fileHandler.openFile('./texto.txt')
-        self.file_size = self.fileHandler.getSizeFile('./texto.txt')
+        self.file = FileHandler.openFile('./texto.txt')
+        self.file_size = FileHandler.getFileSize('./texto.txt')
         self.file_transfered = 0
         self.currentSequenceNumber = 0
         self.lock = threading.Lock()
@@ -84,7 +83,7 @@ class Sender:
 
     def readFile(self, index):
         MSS = 6
-        return self.fileHandler.readFileBytes(index * MSS, self.file, MSS)
+        return FileHandler.readFileBytes(index * MSS, self.file, MSS)
    
 
     def isNotFullMessageBuffer(self, seqNumber):

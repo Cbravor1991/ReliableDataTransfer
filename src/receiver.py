@@ -1,5 +1,5 @@
-from protocol import Protocol
-from socketUDP import SocketUDP
+from lib.protocol import Protocol
+from lib.socketUDP import SocketUDP
 
 class Receiver:
     def __init__(self) -> None:
