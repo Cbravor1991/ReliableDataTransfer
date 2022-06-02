@@ -53,10 +53,11 @@ class Client:
 
     def download(self, fileName, path, serverAddr):
         self.clientSocket.setTimeOut(1) 
+        file = FileHandler.newFile(str(path), filename)
+        
         downloadMessage = self.protocol.createDownloadMessage(fileName)
         self.protocol.sendMessage(self.clientSocket, serverAddr, downloadMessage)
         
-        downloaded = []
         prevSequenceNumber = 0
         morePackages = True
         while morePackages:
@@ -69,11 +70,11 @@ class Client:
             self.protocol.sendMessage(self.clientSocket, serverAddr, ACKMessage)
 
             if sequenceNumber > prevSequenceNumber:
-                downloaded += data
+                file.write(data)
             prevSequenceNumber = sequenceNumber
+        FileHandler.closeFile(file)
+        print("Download finished")
 
-        print('file {}'.format(downloaded)) 
-        
               
     def shutdown(self):
         self.clientSocket.shutdown()

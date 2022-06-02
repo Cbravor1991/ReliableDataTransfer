@@ -27,14 +27,15 @@ class Server:
 
     def handleUpload(self, segment, clientAddr):
         fileSize, fileName = self.protocol.processUploadSegment(segment)
+        file = FileHandler.newFile(self.dstPath, fileName)
         
         ACKMessage = self.protocol.createACKMessage(0)
         self.protocol.sendMessage(self.serverSocket, clientAddr, ACKMessage)
         print('command {} fileSize {} fileName {}'.format(segment[0], fileSize, fileName))
         
-        fileDownload = []
+        transferred = 0
         prevSequenceNumber = 0
-        while len(fileDownload) != fileSize: # hasta terminar el upload o que haya algun error
+        while transferred != fileSize: # hasta terminar el upload o que haya algun error
 
             segment, clientAddr = self.protocol.receive(self.serverSocket)
             if Decoder.isRecPackage(segment):            
@@ -45,10 +46,12 @@ class Server:
                 self.protocol.sendMessage(self.serverSocket, clientAddr, ACKMessage)
 
                 if sequenceNumber > prevSequenceNumber:
-                    fileDownload += data
+                    transferred += len(data)
+                    file.write(data)
                 prevSequenceNumber = sequenceNumber
 
-        print('file {}'.format(fileDownload))               
+        FileHandler.closeFile(file)
+        print('Upload finished')               
 
 
     def sendAndReceiveACK(self, msg, clientAddr):
@@ -71,7 +74,11 @@ class Server:
         fileName = self.protocol.processDownloadSegment(segment)
         print('command {} fileName {}'.format(segment[0], fileName))
         path = self.dstPath + fileName
-        file = FileHandler.openFile(path)
+        try:
+            file = FileHandler.openFile(path)
+        except:
+            print('File not found')
+            return
         fileSize = FileHandler.getFileSize(path)
 
         sequenceNumber = 0
@@ -84,8 +91,8 @@ class Server:
             packageMessage = self.protocol.createDownloadPackageMessage(data, sequenceNumber+1, morePackages)
             sequenceNumber = self.sendAndReceiveACK(packageMessage, clientAddr)
 
-        print("File transfer finished")
         FileHandler.closeFile(file)
+        print("Download finished")
 
 
     def shutdown(self):
