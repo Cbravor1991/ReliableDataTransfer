@@ -10,29 +10,30 @@ import logging
 
 class Sender:
     def __init__(self, path, serverPort):
-        self.window_size = 5
+        self.window_size = 200
         self.window_start = 0
-        self.messagesBuffer = [False for i in range(50000)]
-        self.timers = [False for i in range(50000)]
-        self.socket = SocketUDP()
-        self.protocol = Protocol()
-        self.serverAddress = ("localhost", serverPort)
         self.file = FileHandler.openFile(path)
         self.file_size = FileHandler.getFileSize(path)
         self.file_transfered = 0
         self.currSeqNum = 0
         self.lock = threading.Lock()
-        self.MSS = 5
+        self.MSS = 600
+        self.messagesBuffer = [False for i in range(math.ceil(self.file_size/self.MSS))]
+        self.timers = [False for i in range(math.ceil(self.file_size/self.MSS))]
+        self.socket = SocketUDP()
+        self.protocol = Protocol()
+        self.serverAddress = ("localhost", serverPort)
         self.timeToTimeout = 2
         self.rec_thread = threading.Thread(target=self.receivePack)
         self.send_thread = threading.Thread(target=self.sendPack)
 
     def callFromTimeout(self, index):
         if (self.messagesBuffer[index] is not False):
-            # logging.warning("Timeout")
+           
             if (index < self.window_start):
                 self.stop_timer(index)
             else:
+                logging.warning("Timeout")
                 print("TIMEOUT del seq {}".format(index))
                 logging.debug("Timeout paquete nro seq {}".format(index))
                 logging.info("Reenviando paquete nro seq {}".format(index))
@@ -83,8 +84,8 @@ class Sender:
                 self.removeMessage(sequenceNumber)
                 self.window_start += 1
                 for i in range(self.window_start,
-                               self.window_start + self.window_size):
-                    if (self.messagesBuffer[i] == "buffered"):
+                               self.getTopOfWindow()):
+                    if (self.messagesBuffer[i] == 'buffered'):
                         self.window_start += 1
                     else:
                         logging.debug("WINDOW START: {}"
@@ -95,15 +96,23 @@ class Sender:
                   sequenceNumber < self.window_start + self.window_size):
                 self.stop_timer(sequenceNumber)
                 self.removeMessage(sequenceNumber)
-                self.messagesBuffer[sequenceNumber] = "buffered"
+                self.messagesBuffer[sequenceNumber] = 'buffered'
 
     def readFile(self, index):
         return FileHandler.readFileBytes(index * self.MSS, self.file, self.MSS)
 
+    def getTopOfWindow(self):
+        window_top = self.window_start + self.window_size
+        file_top = math.ceil(self.file_size/self.MSS)
+        if (window_top > file_top):
+            return file_top
+        else:
+            return window_top
+
     def isNotFullMessageBuffer(self, seqNumber):
         total_messages = 0
         for i in range(self.window_start,
-                       self.window_start + self.window_size):
+                       self.getTopOfWindow()):
             if (self.messagesBuffer[i] is not False):
                 total_messages += 1
         seqNumberBelowWindow = seqNumber < self.window_start + self.window_size
