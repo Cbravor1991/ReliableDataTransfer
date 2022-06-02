@@ -36,10 +36,8 @@ class Server:
 
             segment, clientAddr = self.protocol.receive(self.serverSocket)
             if Decoder.isRecPackage(segment):            
-                sequenceNumber, checkSum, data = self.protocol.processRecPackageSegment(segment)
-                if not (self.protocol.verifyCheckSum(checkSum, data)):
-                    print("Corrupt segment: checksum error")
-                    continue
+                sequenceNumber, data = self.protocol.processRecPackageSegment(segment)
+
 
                 print('Sequence number {}'.format(sequenceNumber))
 

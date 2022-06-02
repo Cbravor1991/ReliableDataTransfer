@@ -21,10 +21,8 @@ class Protocol:
     def createDownloadMessage(self, fileName):
         return self.encoder.createDownloadMessage(fileName)
 
-    def createRecPackageMessage(self, data, sequenceNumber):
-       
-        checkSum = self.calculateCheckSum(data)
-        return self.encoder.createRecPackageMessage(sequenceNumber, checkSum, data)
+    def createRecPackageMessage(self, data, sequenceNumber): 
+        return self.encoder.createRecPackageMessage(sequenceNumber, data)
     
     def createACKMessage(self, sequenceNumber):
         return self.encoder.createACKMessage(sequenceNumber)
@@ -51,12 +49,3 @@ class Protocol:
         segment, clientAddress = serverSocket.receiveFrom(2048)
         return segment, clientAddress
 
-    # Checksum
-    def calculateCheckSum(self, data):
-        checkSum = 0
-        for i in range(0, len(data)):
-            checkSum += data[i]
-        return checkSum
-
-    def verifyCheckSum(self, checkSum, data):
-        return checkSum == self.calculateCheckSum(data)

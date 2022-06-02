@@ -33,12 +33,11 @@ class Decoder:
             fileName += chr(fileNameArray[i])
         return fileName
 
-    # Msg = typeRecPackage + sequenceNumber + CheckSum + Data
+    # Msg = typeRecPackage + sequenceNumber + Data
     def processRecPackageSegment(self, segment):
         sequenceNumber = int.from_bytes(segment[1:3], 'big')
-        checkSum = int.from_bytes(segment[3:5], 'big')
-        dataByte = segment[5:]
-        return sequenceNumber, checkSum, dataByte
+        dataByte = segment[3:]
+        return sequenceNumber, dataByte
     
     # Msg = typeACK + sequenceNumber
     def processACKSegment(self, segment):

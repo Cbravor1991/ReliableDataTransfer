@@ -6,7 +6,7 @@ class Receiver:
     def __init__(self):
         self.window_size = 5
         self.window_start = 0
-        self.messagesBuffer = [False for i in range(1000)]
+        self.messagesBuffer = [False for i in range(50000)]
         self.socket = SocketUDP()
         self.protocol = Protocol()
 
@@ -15,10 +15,9 @@ class Receiver:
 
     def receive(self):
         while True:
-
             segment, clientAddr = self.protocol.receive(self.socket)
 
-            seqNum, cs, data = self.protocol.processRecPackageSegment(segment)
+            seqNum, data = self.protocol.processRecPackageSegment(segment)
 
             if (seqNum >= self.window_start and
                seqNum < self.window_size + self.window_start):

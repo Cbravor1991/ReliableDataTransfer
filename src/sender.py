@@ -12,8 +12,8 @@ class Sender:
     def __init__(self, path, serverPort):
         self.window_size = 5
         self.window_start = 0
-        self.messagesBuffer = [False for i in range(self.window_size + 1000)]
-        self.timers = [False for i in range(self.window_size + 1000)]
+        self.messagesBuffer = [False for i in range(50000)]
+        self.timers = [False for i in range(50000)]
         self.socket = SocketUDP()
         self.protocol = Protocol()
         self.serverAddress = ("localhost", serverPort)
@@ -22,18 +22,24 @@ class Sender:
         self.file_transfered = 0
         self.currSeqNum = 0
         self.lock = threading.Lock()
-        self.MSS = 6
+        self.MSS = 5
         self.timeToTimeout = 2
+        self.rec_thread = threading.Thread(target=self.receivePack)
+        self.send_thread = threading.Thread(target=self.sendPack)
 
     def callFromTimeout(self, index):
         if (self.messagesBuffer[index] is not False):
-            logging.warning("Timeout")
-            logging.debug("Timeout paquete nro seq {}".format(index))
-            logging.info("Reenviando paquete nro seq {}".format(index))
-            self.protocol.sendMessage(self.socket,
-                                      self.serverAddress,
-                                      self.messagesBuffer[index])
-            self.start_timer(index)
+            # logging.warning("Timeout")
+            if (index < self.window_start):
+                self.stop_timer(index)
+            else:
+                print("TIMEOUT del seq {}".format(index))
+                logging.debug("Timeout paquete nro seq {}".format(index))
+                logging.info("Reenviando paquete nro seq {}".format(index))
+                self.protocol.sendMessage(self.socket,
+                                        self.serverAddress,
+                                        self.messagesBuffer[index])
+                self.start_timer(index)
 
     def removeMessage(self, index):
         self.lock.acquire(blocking=True)
@@ -64,12 +70,15 @@ class Sender:
 
     def receivePack(self):
         while self.window_start < math.ceil(self.file_size/self.MSS):
+            print("Window start: {}".format(self.window_start))
             segment, serverAddress = self.protocol.receive(self.socket)
             sequenceNumber = self.protocol.processACKSegment(segment)
             logging.info("Recibiendo paquete ACK {}".format(sequenceNumber))
+            print("Recibiendo paquete ACK {}".format(sequenceNumber))
             if (sequenceNumber == self.window_start):
                 logging.debug("El paquete ACK {} coincide con la base ventana"
                               .format(sequenceNumber))
+                
                 self.stop_timer(sequenceNumber)
                 self.removeMessage(sequenceNumber)
                 self.window_start += 1
@@ -81,6 +90,7 @@ class Sender:
                         logging.debug("WINDOW START: {}"
                                       .format(self.window_start))
                         break
+                
             elif (sequenceNumber > self.window_start and
                   sequenceNumber < self.window_start + self.window_size):
                 self.stop_timer(sequenceNumber)
@@ -112,7 +122,7 @@ class Sender:
                 self.protocol.sendMessage(self.socket,
                                           self.serverAddress,
                                           recMsg)
-
+                
                 self.messagesBuffer[self.currSeqNum] = recMsg
                 self.start_timer(self.currSeqNum)
                 logging.info('Se envia paquete con nro seq: {}'
@@ -121,16 +131,14 @@ class Sender:
                 self.file_transfered += len(data)
             else:
                 logging.warning("La ventana se encuentra llena")
-                sleep(0.5)
+                sleep(0.1)
 
     def start(self):
         self.socket.bindSocket("localhost", 0)
 
-        send_thread = threading.Thread(target=self.sendPack)
-        rec_thread = threading.Thread(target=self.receivePack)
+        
+        self.rec_thread.start()
+        self.send_thread.start()
 
-        rec_thread.start()
-        send_thread.start()
-
-        send_thread.join()
-        rec_thread.join()
+        self.send_thread.join()
+        self.rec_thread.join()

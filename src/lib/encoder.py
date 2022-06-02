@@ -16,11 +16,10 @@ class Encoder:
         downloadMessage += bytearray(fileName, 'utf-8') 
         return downloadMessage 
 
-    # Msg = typeRecPackage + sequenceNumber + CheckSum + Data
-    def createRecPackageMessage(self, sequenceNumber, checkSum, data):
+    # Msg = typeRecPackage + sequenceNumber +  Data
+    def createRecPackageMessage(self, sequenceNumber, data):
         packageMessage = bytearray([3])
         packageMessage += pack(">H",sequenceNumber)
-        packageMessage += pack(">H",checkSum)
         packageMessage += data
         return packageMessage
 
