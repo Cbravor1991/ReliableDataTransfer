@@ -30,3 +30,6 @@ class SocketUDP:
 
     def setTimeOut(self, time):
         self.socket.settimeout(time)
+
+    def resetTimeouts(self):
+        self.tryTimeOuts = 0
