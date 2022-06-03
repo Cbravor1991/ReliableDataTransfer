@@ -73,7 +73,7 @@ class SelectiveRepeat:
             try:
                 segment, serverAddr  = self.protocol.receive(clientSocket)
             except timeout:
-                pass
+                continue
             if (Decoder.isRecPackage(segment)):
                 seqNum, data = self.protocol.processRecPackageSegment(segment)
                 if (self.isInsideWindow(window_start, window_size, seqNum)):
