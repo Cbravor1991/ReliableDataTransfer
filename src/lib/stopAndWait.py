@@ -34,17 +34,17 @@ class StopAndWait:
         return sequenceNumber
  
     def socketSendAndReceiveACK(self, msg, serverAddr, clientSocket):
+        clientSocket.resetTimeouts()
         while True:
             try:
                 clientSocket.setTimeOut(1) 
                 self.protocol.sendMessage(clientSocket, serverAddr, msg)
                 segment, _ = self.protocol.receive(clientSocket)
                 sequenceNumber = self.protocol.processACKSegment(segment)
-                print('cliente recibe el ACK {}'.format(sequenceNumber))
                 break
             except timeout:
                 clientSocket.addTimeOut()
-                print("timeout") 
+                print("timeout, no se recibio el ACK. Se envia nuevamente la data") 
         return sequenceNumber    
 
     def socketSendAndReceiveFileSize(self, msg, serverAddr, clientSocket):
@@ -84,8 +84,9 @@ class StopAndWait:
         while uploaded < fileSize:
             data = FileHandler.readFileBytes(uploaded, file, MSS)
             packageMessage = self.protocol.createRecPackageMessage(data, sequenceNumber+1)
+            print(f'cliente intenta enviar = {data}')
             sequenceNumber = self.socketSendAndReceiveACK(packageMessage, serverAddr, clientSocket)
-            print('cliente recibe Sequence number = {}, data = {}'.format(sequenceNumber, data))
+            print(f'cliente recibe ACK = {sequenceNumber}')
             uploaded += min(len(data), MSS)
         print("Upload finished")
 
