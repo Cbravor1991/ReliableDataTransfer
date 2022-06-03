@@ -4,6 +4,8 @@ RECPACKAGE = 3
 ACK = 4
 DOWNLOADPACKAGE = 5
 FILESIZE = 6
+TERMINATE = 7
+
 class Decoder:
     def isUpload(segment):
         return segment[0] == UPLOAD
@@ -23,12 +25,16 @@ class Decoder:
     def isFileSize(segment):
         return segment[0] == FILESIZE
 
+    def isTerminate(segment):
+        return segment[0] == TERMINATE
+
     # Msg = typeUpload + FileSize + FileName    
     def processUploadSegment(self, segment):  
         fileSize = int.from_bytes(segment[1:5], 'big')
         fileName = segment[5:].decode('utf-8')
         return fileSize, fileName
 
+    # Msg = filesize
     def processFileSize(segment):
         fileSize = int.from_bytes(segment[1:5], 'big')
         return fileSize
@@ -54,8 +60,3 @@ class Decoder:
     def processACKSegment(self, segment):
         sequenceNumber = int.from_bytes(segment[1:], 'big')
         return sequenceNumber
-    
-    
-
-  
-    
