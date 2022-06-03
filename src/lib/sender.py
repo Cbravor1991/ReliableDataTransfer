@@ -189,7 +189,11 @@ class Sender:
 
 
         self.send_thread.start()
-        self.rec_thread.start()
+        try:
+            self.rec_thread.start()
+        except:
+            logging.debug(f'Closed server: ending thread...')
+            return
 
         self.rec_thread.join()
         self.send_thread.join()

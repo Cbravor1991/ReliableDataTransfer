@@ -2,6 +2,7 @@ import math
 from threading import Timer
 from time import sleep
 from lib.protocol import Protocol
+from lib.decoder import Decoder
 import threading
 from lib.fileHandler import FileHandler
 import logging
@@ -84,7 +85,10 @@ class SenderForServer:
             try:
                 segment = self.recvQueue.get()
             except TimeoutError:
-                pass
+                continue
+            if (Decoder.isTerminate(segment)):
+                raise Exception('close server')
+
             sequenceNumber = self.protocol.processACKSegment(segment)
             #   logging.info("Recibiendo paquete ACK {}".format(sequenceNumber))
             logging.debug("Recibiendo paquete ACK {}".format(sequenceNumber))

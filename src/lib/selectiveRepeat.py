@@ -114,7 +114,7 @@ class SelectiveRepeat:
 
         for _ in range(FINAL_ACK_TRIES):
             self.protocol.sendMessage(clientSocket, serverAddr, ACKMessage)
-        
+
         file.close()
 
 
@@ -146,8 +146,6 @@ class SelectiveRepeat:
 
 
     def serverUpload(self,recvQueue, sendQueue, clientAddr, dstPath):
-
-        MSS = 1000
         window_size = 200
         window_start = 0
         
@@ -179,11 +177,14 @@ class SelectiveRepeat:
                                     window_start += 1
                                 else:
                                     break
-                elif (self.isBelowWindow(self, seqNum, window_start)):
+                elif (self.isBelowWindow(seqNum, window_start)):
                     ACKMessage = self.protocol.createACKMessage(seqNum)
                     sendQueue.put((ACKMessage, clientAddr))
             elif (Decoder.isUpload(segment)):
                 sendQueue.put((ACKMessage, clientAddr))
+            elif (Decoder.isTerminate(segment)):
+                logging.debug(f'Closed server: ending thread {clientAddr}...')
+                return
 
         for _ in range(FINAL_ACK_TRIES):
             sendQueue.put((ACKMessage, clientAddr))
