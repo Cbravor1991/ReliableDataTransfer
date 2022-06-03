@@ -1,14 +1,16 @@
 import math
+from socket import timeout
 from threading import Timer
 from time import sleep
+from lib.socketUDP import SocketUDP
 from lib.protocol import Protocol
 import threading
 from lib.fileHandler import FileHandler
 import logging
 
 
-class SenderForServer:
-    def __init__(self, recvQueue, sendQueue, clientAddr, file, fileSize):
+class Sender:
+    def __init__(self, file, serverPort, fileSize):
         self.window_size = 200
         self.window_start = 0
         self.file = file
@@ -19,34 +21,27 @@ class SenderForServer:
         self.MSS = 1000
         self.messagesBuffer = [False for i in range(math.ceil(self.file_size/self.MSS))]
         self.timers = [False for i in range(math.ceil(self.file_size/self.MSS))]
+        self.socket = SocketUDP()
         self.protocol = Protocol()
-        self.recvQueue = recvQueue
-        self.sendQueue = sendQueue
-        self.clientAddr = clientAddr
+        self.serverAddress = ("localhost", serverPort)
         self.timeToTimeout = 2
         self.rec_thread = threading.Thread(target=self.receivePack)
         self.send_thread = threading.Thread(target=self.sendPack)
-        self.lastPackAckedCounter = 0
 
 
     def callFromTimeout(self, index):
         if (self.messagesBuffer[index] is not False):
-            if (index == math.ceil(self.file_size/self.MSS)-1):
-                self.lastPackAckedCounter += 1
-                print(self.lastPackAckedCounter)
-                if (self.lastPackAckedCounter > 10):
-                    self.stop_timer(index)
-
+           
             if (index < self.window_start or self.messagesBuffer[index] == "buffered"):
                 self.stop_timer(index)
-            
             else:
                 #logging.warning("Timeout")
-                print("TIMEOUT del seq {}".format(index))
+                logging.debug("TIMEOUT del seq {}".format(index))
                 #logging.debug("Timeout paquete nro seq {}".format(index))
                 #logging.info("Reenviando paquete nro seq {}".format(index))
-                self.sendQueue.put((self.messagesBuffer[index], self.clientAddr))
-
+                self.protocol.sendMessage(self.socket,
+                                        self.serverAddress,
+                                        self.messagesBuffer[index])
                 self.start_timer(index)
 
     def removeMessage(self, index):
@@ -80,14 +75,14 @@ class SenderForServer:
 
     def receivePack(self):
         while self.window_start < math.ceil(self.file_size/self.MSS):
-            print("Window start: {}".format(self.window_start))
+            logging.debug("Window start: {}".format(self.window_start))
             try:
-                segment = self.recvQueue.get()
-            except TimeoutError:
-                pass
+                segment, serverAddress = self.protocol.receive(self.socket)
+            except timeout:
+                raise Exception('Timeout')
             sequenceNumber = self.protocol.processACKSegment(segment)
             #   logging.info("Recibiendo paquete ACK {}".format(sequenceNumber))
-            print("Recibiendo paquete ACK {}".format(sequenceNumber))
+            logging.debug("Recibiendo paquete ACK {}".format(sequenceNumber))
             if (sequenceNumber == self.window_start):
                 #logging.debug("El paquete ACK {} coincide con la base ventana"
                  #             .format(sequenceNumber))
@@ -131,7 +126,8 @@ class SenderForServer:
         return total_messages <= self.window_size and seqNumberBelowWindow
 
     def sendPack(self):
-
+        logging.debug(self.file_transfered)
+        logging.debug(self.file_size)
         while self.file_transfered < self.file_size:
             #logging.info("Window: {}".format(self.messagesBuffer[
               #                                self.window_start:
@@ -139,10 +135,13 @@ class SenderForServer:
                   #                            self.window_size]))
             if(self.isNotFullMessageBuffer(self.currSeqNum)):
                 data = self.readFile(self.currSeqNum)
-                print("Sending: {} seqNum: {}".format(data, self.currSeqNum))
-                recMsg = self.protocol.createRecPackageMessage(data, self.currSeqNum)
+                logging.debug("Sending: {} seqNum: {}".format(data, self.currSeqNum))
+                recMsg = self.protocol.createRecPackageMessage(data,
+                                                               self.currSeqNum)
                 
-                self.sendQueue.put((recMsg, self.clientAddr))
+                self.protocol.sendMessage(self.socket,
+                                          self.serverAddress,
+                                          recMsg)
                 
                 self.messagesBuffer[self.currSeqNum] = recMsg
                 self.start_timer(self.currSeqNum)
@@ -154,12 +153,40 @@ class SenderForServer:
                 #logging.warning("La ventana se encuentra llena")
                 sleep(0.1)
 
-  
+    def startClienUpload(self, clientSocket, filename, file, fileSize, serverAddr):
+        uploadMsg = self.protocol.createUploadMessage(fileSize, filename)
+        self.file = file
+        self.file_size = fileSize
+        self.socket = clientSocket
 
-    def startServer(self):
+        while True:
+            try:
+                self.socket.setTimeOut(1)
+                self.protocol.sendMessage(clientSocket, serverAddr, uploadMsg)
+                segment, serverAddr = self.protocol.receive(clientSocket)
+                sequenceNumber = self.protocol.processACKSegment(segment)
+                break
+            except timeout:
+                logging.debug("Timeout")
+
+        self.messagesBuffer = [False for i in range(math.ceil(self.file_size/self.MSS))]
+        self.timers = [False for i in range(math.ceil(self.file_size/self.MSS))]
+        
+        self.send_thread.start()
+        self.rec_thread.start()
+
+        self.rec_thread.join()
+        self.send_thread.join()
+
+    def startServer(self, segment, serverSocket, clientAddr):
+
+        self.socket = serverSocket
+        self.serverAddress = clientAddr
 
 
-        print(math.ceil(self.file_size/self.MSS))
+        self.messagesBuffer = [False for i in range(math.ceil(self.file_size/self.MSS))]
+        self.timers = [False for i in range(math.ceil(self.file_size/self.MSS))]
+
 
         self.send_thread.start()
         self.rec_thread.start()

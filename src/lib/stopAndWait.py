@@ -1,4 +1,5 @@
 import queue
+import logging
 from lib.protocol import Protocol
 from lib.fileHandler import FileHandler
 from lib.decoder import Decoder
@@ -25,13 +26,14 @@ class StopAndWait:
                     raise Exception('Closed server')
                 # que pasa si se recibe un paquete que no es ACK? deberia saltar excepcion en el decoder
                 sequenceNumber = self.protocol.processACKSegment(segment)
-                print(f'Download {addr}, server recibe ACK {sequenceNumber}')
+                logging.debug(f'Download {addr}: recibido ACK {sequenceNumber}')
                 break
             except queue.Empty:
                 timeouts += 1
                 if timeouts >= N_TIMEOUTS:
+                    logging.warning('Timeout exceeded')
                     raise Exception('Timeouts exceeded')
-                print("timeout, server no recibe el ack. Se reenvia el paquete") 
+                logging.debug("timeout, no se recibe el ACK. Se reenvia el paquete") 
         return sequenceNumber
  
     def socketSendAndReceiveACK(self, msg, serverAddr, clientSocket):
@@ -45,7 +47,7 @@ class StopAndWait:
                 break
             except timeout:
                 clientSocket.addTimeOut()
-                print("timeout, no se recibio el ACK. Se envia nuevamente la data") 
+                logging.debug("timeout, no se recibe el ACK. Se envia nuevamente la data") 
         return sequenceNumber    
 
     def socketSendAndReceiveFileSize(self, msg, serverAddr, clientSocket):
@@ -72,7 +74,7 @@ class StopAndWait:
                 break
             except timeout:
                 clientSocket.addTimeOut()
-                print("timeout, no se recibio el DownloadPackage. Se envia nuevamente el paquete inicial") 
+                logging.debug("timeout, no se recibe el DownloadPackage. Se envia nuevamente el paquete inicial") 
         return sequenceNumber, morePackages, data        
 
     
@@ -85,11 +87,10 @@ class StopAndWait:
         while uploaded < fileSize:
             data = FileHandler.readFileBytes(uploaded, file, MSS)
             packageMessage = self.protocol.createRecPackageMessage(data, sequenceNumber+1)
-            print(f'cliente intenta enviar = {data}')
             sequenceNumber = self.socketSendAndReceiveACK(packageMessage, serverAddr, clientSocket)
-            print(f'cliente recibe ACK = {sequenceNumber}')
+            logging.debug(f'Recibe ACK = {sequenceNumber}')
             uploaded += min(len(data), MSS)
-        print("Upload finished")
+        logging.info("Upload finished")
 
 
     def clientDownload(self, clientSocket, fileName, path, serverAddr):
@@ -98,7 +99,7 @@ class StopAndWait:
         
         downloadMessage = self.protocol.createDownloadMessage(fileName)
         prevSequenceNumber, morePackages, data = self.sendAndReceiveData(downloadMessage, serverAddr, clientSocket)
-        print('cliente recibe Sequence number = {}, data = {}'.format(prevSequenceNumber, data))
+        logging.debug('Recibe Sequence number = {}, data = {}'.format(prevSequenceNumber, data))
         file.write(data)
         ACKMessage = self.protocol.createACKMessage(prevSequenceNumber)
         self.protocol.sendMessage(clientSocket, serverAddr, ACKMessage)
@@ -107,7 +108,7 @@ class StopAndWait:
             clientSocket.setTimeOut(15)
             segment, serverAddr = self.protocol.receive(clientSocket)
             sequenceNumber, morePackages, data = self.protocol.processDownloadPackageSegment(segment)
-            print('cliente recibe Sequence number = {}, data = {}'.format(sequenceNumber, data))
+            logging.debug('Recibe Sequence number = {}, data = {}'.format(sequenceNumber, data))
             ACKMessage = self.protocol.createACKMessage(sequenceNumber)
             self.protocol.sendMessage(clientSocket, serverAddr, ACKMessage)
 
@@ -119,7 +120,7 @@ class StopAndWait:
             self.protocol.sendMessage(clientSocket, serverAddr, ACKMessage)
     
         FileHandler.closeFile(file)
-        print("Download finished")
+        logging.info("Download finished")
 
 
     def serverUpload(self, recvQueue, sendQueue, clientAddr, dstPath):
@@ -129,7 +130,7 @@ class StopAndWait:
         
         ACKMessage = self.protocol.createACKMessage(0)
         sendQueue.put((ACKMessage, clientAddr))
-        print('command {} fileSize {} fileName {}'.format(segment[0], fileSize, fileName))
+        logging.debug('command {} fileSize {} fileName {}'.format(segment[0], fileSize, fileName))
         
         transferred = 0
         prevSequenceNumber = 0
@@ -138,11 +139,11 @@ class StopAndWait:
             try:
                 segment = recvQueue.get(block=True, timeout=15)
             except:
-                print(f'Timeouts exceeded: ending thread {clientAddr}...')
+                logging.debug(f'Timeouts exceeded: ending thread {clientAddr}...')
                 return
             if Decoder.isRecPackage(segment):            
                 sequenceNumber, data = self.protocol.processRecPackageSegment(segment)
-                print(f'Upload {clientAddr}: server recibe sequence number {sequenceNumber}')
+                logging.debug(f'Upload {clientAddr}: Recibe paquete de datos con sequence number {sequenceNumber}')
 
                 ACKMessage = self.protocol.createACKMessage(sequenceNumber)
                 sendQueue.put((ACKMessage, clientAddr))
@@ -154,14 +155,14 @@ class StopAndWait:
             elif Decoder.isUpload(segment):
                 sendQueue.put((ACKMessage, clientAddr))
             elif Decoder.isTerminate(segment):
-                print(f'Closed server: ending thread {clientAddr}...')
+                logging.debug(f'Closed server: ending thread {clientAddr}...')
                 return
 
         for _ in range(FINAL_ACK_TRIES):    
             sendQueue.put((ACKMessage, clientAddr))
 
         FileHandler.closeFile(file)
-        print('Upload finished')               
+        logging.info(f'Upload from {clientAddr} finished')               
 
 
 
@@ -169,13 +170,13 @@ class StopAndWait:
         segment = recvQueue.get()
         fileName = self.protocol.processDownloadSegment(segment)
 
-        print('command {} fileName {}'.format(segment[0], fileName))
+        logging.debug('command {} fileName {}'.format(segment[0], fileName))
         path = dstPath + fileName
         try:
             file = FileHandler.openFile(path)
             fileSize = FileHandler.getFileSize(path)
         except:
-            print('File not found')
+            logging.debug('File not found')
             return
 
         numPackages = ceil(fileSize / MSS)
@@ -187,13 +188,13 @@ class StopAndWait:
             sent += min(len(data), MSS)
             morePackages = numPackages > 1
             packageMessage = self.protocol.createDownloadPackageMessage(data, sequenceNumber+1, morePackages)
-            print(f'Download {clientAddr}: server envia el paquete {sequenceNumber+1}')
+            logging.debug(f'Download {clientAddr}: se envia el paquete {sequenceNumber+1}')
             try:
                 sequenceNumber = self.sendAndReceiveACK(packageMessage, clientAddr, recvQueue, sendQueue)
             except Exception as e:
-                print(f'{e}: ending thread {clientAddr}...')
+                logging.debug(f'{e}: ending thread {clientAddr}...')
                 return
             numPackages -= 1
 
         FileHandler.closeFile(file)
-        print("Download finished")
+        logging.info(f'Download from {clientAddr} finished')               

@@ -1,3 +1,4 @@
+import logging
 from lib.decoder import Decoder
 from lib.protocol import Protocol
 from lib.socketUDP import SocketUDP
@@ -35,19 +36,19 @@ class Receiver:
         self.messagesBuffer = [False for i in range(math.ceil(fileSize/MSS))]
         while counter < math.ceil(fileSize/MSS):
             segment, clientAddr = self.protocol.receive(serverSocket)
-            print("Recibo segmento {}".format(segment))
+            logging.debug("Recibo segmento {}".format(segment))
             if (Decoder.isRecPackage(segment)):
                 
                 seqNum, data = self.protocol.processRecPackageSegment(segment)
-                print("Recibo: {}".format(seqNum))
-                print(self.window_start)
+                logging.debug("Recibo: {}".format(seqNum))
+                logging.debug(self.window_start)
                 if (seqNum >= self.window_start and
                 seqNum < self.window_size + self.window_start):
 
                     ACKMessage = self.protocol.createACKMessage(seqNum)
                 
                     self.protocol.sendMessage(serverSocket, clientAddr, ACKMessage)
-                    print('Sequence number {}, data: {}'
+                    logging.debug('Sequence number {}, data: {}'
                         .format(seqNum, data))
                     self.messagesBuffer[seqNum] = data
                     if (seqNum == self.window_start):
@@ -64,7 +65,7 @@ class Receiver:
                                 break
                             i += 1
                 elif (seqNum < self.window_start):
-                    print("Mando por debajo de la ventana {}".format(seqNum))
+                    logging.debug("Mando por debajo de la ventana {}".format(seqNum))
                     ACKMessage = self.protocol.createACKMessage(seqNum)
                     self.protocol.sendMessage(serverSocket, clientAddr, ACKMessage)
                 else:
@@ -90,19 +91,19 @@ class Receiver:
         
         #while counter < math.ceil(10000):
             segment, serverAddr = self.protocol.receive(clientSocket)
-            print("Recibo segmento {}".format(segment))
+            logging.debug("Recibo segmento {}".format(segment))
             if (Decoder.isRecPackage(segment)):
                 
                 seqNum, data = self.protocol.processRecPackageSegment(segment)
-                print("Recibo: {}".format(seqNum))
-                print(self.window_start)
+                logging.debug("Recibo: {}".format(seqNum))
+                logging.debug(self.window_start)
                 if (seqNum >= self.window_start and
                 seqNum < self.window_size + self.window_start):
 
                     ACKMessage = self.protocol.createACKMessage(seqNum)
                 
                     self.protocol.sendMessage(clientSocket, serverAddr, ACKMessage)
-                    print('Sequence number {}, data: {}'
+                    logging.debug('Sequence number {}, data: {}'
                         .format(seqNum, data))
                     self.messagesBuffer[seqNum] = data
                     if (seqNum == self.window_start):
@@ -120,7 +121,7 @@ class Receiver:
                                 break
                             i += 1
                 elif (seqNum < self.window_start):
-                    print("Mando por debajo de la ventana {}".format(seqNum))
+                    logging.debug("Mando por debajo de la ventana {}".format(seqNum))
                     ACKMessage = self.protocol.createACKMessage(seqNum)
                     self.protocol.sendMessage(clientSocket, serverAddr, ACKMessage)
                 else:

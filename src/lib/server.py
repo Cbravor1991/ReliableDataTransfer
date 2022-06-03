@@ -31,7 +31,7 @@ class Server:
                 self.connections[clientAddr].put(segment)
             
             else:
-                print(f"Cliente nuevo: {clientAddr}")
+                logging.info(f"New client: {clientAddr}")
                 recvQueue = Queue()
                 recvQueue.put(segment)
                 self.connections[clientAddr] = recvQueue

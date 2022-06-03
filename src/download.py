@@ -1,13 +1,18 @@
-from yaml import parse
+import logging
 from lib.client import Client
-from lib.fileHandler import FileHandler
 from lib.arguments import parse_client_download
 from lib.selectiveRepeat import SelectiveRepeat
 from lib.stopAndWait import StopAndWait
 
 def main():
-    args = parse_client_download()
-
+    args, level = parse_client_download()
+    GREEN = "\033[1;32m"
+    NC = "\033[0m"
+    logging.basicConfig(
+        level=level,
+        format=f"%(asctime)s - [{GREEN}download{NC} %(levelname)s] - %(message)s",
+        datefmt="%Y/%m/%d %H:%M:%S",
+    )
     serverAddr = (args.host, args.port)
 
     if (args.protocol.value == 'selectiveRepeat'):
@@ -15,13 +20,14 @@ def main():
     else:
         client = Client('localhost', 0, StopAndWait())
     try:
+        logging.info('Starting download client...')
         client.download(args.filename, args.dst, serverAddr)
     except KeyboardInterrupt:
-        print("Shutting down client...")
+        logging.info("Shutting down client...")
     except Exception as e:
-        print(e)
+        logging.warning(f'Exception: {e}')
 
-    print("Client shut down")
+    logging.info("Client shut down")
     client.shutdown()
 
 main()

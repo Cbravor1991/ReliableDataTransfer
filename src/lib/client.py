@@ -6,8 +6,8 @@ from socket import timeout
 from lib.socketUDP import SocketUDP
 from lib.protocol import Protocol
 from lib.fileHandler import FileHandler
-from receiver import Receiver
-from sender import Sender
+from lib.receiver import Receiver
+from lib.sender import Sender
 
 
 MSS = 6

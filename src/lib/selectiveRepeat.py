@@ -1,13 +1,12 @@
-from fileinput import filename
-from lib import client
+import logging
 from lib.decoder import Decoder
 from lib.encoder import Encoder
 from lib.protocol import Protocol
-from receiver import Receiver
-from sender import Sender
+from lib.receiver import Receiver
+from lib.sender import Sender
 from lib.fileHandler import FileHandler
 import math
-from senderForServer import SenderForServer
+from lib.senderForServer import SenderForServer
 from lib.stopAndWait import StopAndWait
 from socket import timeout
 
@@ -50,7 +49,7 @@ class SelectiveRepeat:
         downloadMsg = self.protocol.createDownloadMessage(fileName)
         stopAndWait = StopAndWait()
         segment = stopAndWait.socketSendAndReceiveFileSize(downloadMsg, serverAddr, clientSocket)
-        print(segment)
+        logging.debug(segment)
         
         #self.protocol.sendMessage(clientSocket, serverAddr, downloadMsg)
 
@@ -68,7 +67,7 @@ class SelectiveRepeat:
 
 
         file = FileHandler.newFile(path, fileName)
-        print(fileSize)
+        logging.debug(fileSize)
         while window_start < segmentsToReceive:
             try:
                 segment, serverAddr  = self.protocol.receive(clientSocket)
@@ -78,7 +77,7 @@ class SelectiveRepeat:
                 seqNum, data = self.protocol.processRecPackageSegment(segment)
                 if (self.isInsideWindow(window_start, window_size, seqNum)):
                     ACKMessage = self.protocol.createACKMessage(seqNum)
-                    print("Mando aCK: {}".format(seqNum))
+                    logging.debug("Mando ACK: {}".format(seqNum))
                     self.protocol.sendMessage(clientSocket, serverAddr, ACKMessage)
                     
                     messagesBuffer[seqNum] = data
@@ -93,20 +92,20 @@ class SelectiveRepeat:
                                 else:
                                     break
                 elif (self.isBelowWindow(seqNum, window_start)):
-                    print("Below window")
+                    logging.debug("Below window")
                     ACKMessage = self.protocol.createACKMessage(seqNum)
                     self.protocol.sendMessage(clientSocket, serverAddr, ACKMessage)
             elif (Decoder.isDownload(segment)):
-                print("Es download")
+                logging.debug("Es download")
                 self.protocol.sendMessage(clientSocket, serverAddr, ACKMessage)
             elif (Decoder.isFileSize(segment)):
                 self.protocol.sendMessage(clientSocket, serverAddr, ackFSMsg)
 
         try:
-            print("Espero")
+            logging.debug("Espero")
             clientSocket.setTimeOut(5)
             segment, serverAddr  = self.protocol.receive(clientSocket)
-            print("Recibi")
+            logging.debug("Recibi")
             seqNum, data = self.protocol.processRecPackageSegment(segment)
             ACKMessage = self.protocol.createACKMessage(seqNum)
             self.protocol.sendMessage(clientSocket, serverAddr, ACKMessage)
@@ -120,14 +119,14 @@ class SelectiveRepeat:
         segment = recvQueue.get()
         fileName = self.protocol.processDownloadSegment(segment)
 
-        print('command {} fileName {}'.format(segment[0], fileName))
+        logging.debug('command {} fileName {}'.format(segment[0], fileName))
         path = dstPath + fileName
 
         try:
             file = FileHandler.openFile(path)
             fileSize = FileHandler.getFileSize(path)
         except:
-            print('File not found')
+            logging.debug(f'Download from {clientAddr}: File not found')
             return
 
         fileSizeSegment = Encoder.createFileSize(fileSize)

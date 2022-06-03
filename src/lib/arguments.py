@@ -126,9 +126,9 @@ def parse_server_start():
 #implementado para manejar verbosity mas que nada que utiliza la libretia loggin
 def validate_parse(args):
     if args.verbose:
-        logging.basicConfig(level=VERBOSITY[1])
+        level = level=VERBOSITY[1]
     else:
-        logging.basicConfig(level=VERBOSITY[2])
+        level=VERBOSITY[2]
     if args.quiet:
         logging.disable(level=logging.CRITICAL + 1)
     if not args.host or not args.host.replace(".", "").isdigit():
@@ -136,4 +136,4 @@ def validate_parse(args):
     if args.port:
         if args.port < 1024 or args.port > 65535:
             args.port = DEFAULT_PORT
-    return args
+    return (args, level)
