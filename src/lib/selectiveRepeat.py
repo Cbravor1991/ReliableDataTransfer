@@ -36,9 +36,8 @@ class SelectiveRepeat:
 
 
     def clientUpload(self, clientSocket, filename, file, fileSize, serverAddr):
-
         sender = Sender(file, serverAddr[1], fileSize)
-        sender.startClienUpload(clientSocket, filename, file, fileSize, serverAddr)
+        sender.startClient(clientSocket, filename, file, fileSize, serverAddr)
 
     def clientDownload(self, clientSocket, fileName, path, serverAddr):
         
@@ -113,7 +112,6 @@ class SelectiveRepeat:
             pass
         file.close()
 
-
     def serverDownload(self, recvQueue, sendQueue, clientAddr, dstPath):
 
         segment = recvQueue.get()
@@ -130,21 +128,17 @@ class SelectiveRepeat:
             return
 
         fileSizeSegment = Encoder.createFileSize(fileSize)
-
-        stopAndWait = StopAndWait()
-        seqNum = stopAndWait.sendAndReceiveACK(fileSizeSegment,clientAddr, recvQueue, sendQueue)
-
-
-        sender = SenderForServer(recvQueue, sendQueue, clientAddr, file, fileSize)
-        sender.startServer()
+        sendQueue.put((fileSizeSegment, clientAddr))
+        
+        #sender = Sender(file, 5, fileSize )
+        #sender.startServer(segment, serverSocket, clientAddr)
     
 
 
     def serverUpload(self,recvQueue, sendQueue, clientAddr, dstPath):
-
-        MSS = 1000
-        window_size = 200
+        window_size = 3
         window_start = 0
+        MSS = 5
         
         segment = recvQueue.get()
         fileSize, fileName = self.protocol.processUploadSegment(segment)
@@ -168,7 +162,7 @@ class SelectiveRepeat:
                     if (seqNum == window_start):
                         file.write(messagesBuffer[seqNum])
                         window_start += 1
-                        while window_start < self.getTopOfWindow(segmentsToReceive, window_start, window_size):
+                        while window_start < self.getTopOfWindow(fileSize):
                                 if (messagesBuffer[window_start] is not False):
                                     file.write(messagesBuffer[window_start])
                                     window_start += 1

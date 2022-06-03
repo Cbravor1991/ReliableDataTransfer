@@ -26,8 +26,9 @@ class Server:
         threading.Thread(target=self.senderThread).start()
         while True:
             segment, clientAddr = self.protocol.receive(self.serverSocket)
-
-            if clientAddr in self.connections:
+            if Decoder.isTerminate(segment):
+                self.connections[clientAddr].pop()
+            elif clientAddr in self.connections:
                 self.connections[clientAddr].put(segment)
             
             else:
@@ -39,6 +40,7 @@ class Server:
                     threading.Thread(target=self.transferMethod.serverUpload, args=(recvQueue, self.sendQueue, clientAddr, self.dstPath)).start()
                 elif Decoder.isDownload(segment):
                     threading.Thread(target=self.transferMethod.serverDownload, args=(recvQueue, self.sendQueue, clientAddr, self.dstPath)).start()
+            
             
     def senderThread(self):
         while True:

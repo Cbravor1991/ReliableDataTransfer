@@ -1,3 +1,4 @@
+from pkgutil import ImpImporter
 import queue
 import logging
 from lib.protocol import Protocol
@@ -5,10 +6,10 @@ from lib.fileHandler import FileHandler
 from lib.decoder import Decoder
 from socket import timeout
 from math import ceil
+from lib.encoder import Encoder
 
-MSS = 5
+MSS = 2
 N_TIMEOUTS = 20
-FINAL_ACK_TRIES = 5
 
 class StopAndWait:
 
@@ -37,7 +38,6 @@ class StopAndWait:
         return sequenceNumber
  
     def socketSendAndReceiveACK(self, msg, serverAddr, clientSocket):
-        clientSocket.resetTimeouts()
         while True:
             try:
                 clientSocket.setTimeOut(1) 
@@ -61,8 +61,7 @@ class StopAndWait:
             except timeout:
                 clientSocket.addTimeOut()
                 print("timeout") 
-        return segment    
-
+        return sequenceNumber    
 
     def sendAndReceiveData(self, msg, serverAddr, clientSocket):
         while True:
@@ -115,10 +114,7 @@ class StopAndWait:
             if sequenceNumber > prevSequenceNumber:
                 file.write(data)
             prevSequenceNumber = sequenceNumber
-
-        for _ in range(FINAL_ACK_TRIES):    
-            self.protocol.sendMessage(clientSocket, serverAddr, ACKMessage)
-    
+            
         FileHandler.closeFile(file)
         logging.info("Download finished")
 
@@ -157,9 +153,9 @@ class StopAndWait:
             elif Decoder.isTerminate(segment):
                 logging.debug(f'Closed server: ending thread {clientAddr}...')
                 return
-
-        for _ in range(FINAL_ACK_TRIES):    
-            sendQueue.put((ACKMessage, clientAddr))
+        terminateMsg = Encoder.createTerminateMessage()
+        sendQueue.put((terminateMsg, clientAddr))
+        
 
         FileHandler.closeFile(file)
         logging.info(f'Upload from {clientAddr} finished')               
@@ -195,6 +191,7 @@ class StopAndWait:
                 logging.debug(f'{e}: ending thread {clientAddr}...')
                 return
             numPackages -= 1
-
+        terminateMsg = Encoder.createTerminateMessage()
+        recvQueue.put((terminateMsg, clientAddr))
         FileHandler.closeFile(file)
         logging.info(f'Download from {clientAddr} finished')               
