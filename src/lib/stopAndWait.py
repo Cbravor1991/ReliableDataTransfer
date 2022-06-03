@@ -24,7 +24,7 @@ class StopAndWait:
                     raise Exception('Closed server')
                 # que pasa si se recibe un paquete que no es ACK? deberia saltar excepcion en el decoder
                 sequenceNumber = self.protocol.processACKSegment(segment)
-                print('server recibe ACK {}'.format(sequenceNumber))
+                print(f'Download {addr}, server recibe ACK {sequenceNumber}')
                 break
             except queue.Empty:
                 timeouts += 1
@@ -40,7 +40,7 @@ class StopAndWait:
                 self.protocol.sendMessage(clientSocket, serverAddr, msg)
                 segment, _ = self.protocol.receive(clientSocket)
                 sequenceNumber = self.protocol.processACKSegment(segment)
-                print('ACK {}'.format(sequenceNumber))
+                print('cliente recibe el ACK {}'.format(sequenceNumber))
                 break
             except timeout:
                 clientSocket.addTimeOut()
@@ -57,7 +57,7 @@ class StopAndWait:
                 break
             except timeout:
                 clientSocket.addTimeOut()
-                print("timeout, no se recibio el DownloadPackage. Se envia nuevamente el ACK") 
+                print("timeout, no se recibio el DownloadPackage. Se envia nuevamente el paquete inicial") 
         return sequenceNumber, morePackages, data        
 
     
@@ -69,10 +69,9 @@ class StopAndWait:
         uploaded = 0
         while uploaded < fileSize:
             data = FileHandler.readFileBytes(uploaded, file, MSS)
-            print(data, fileSize, uploaded)
             packageMessage = self.protocol.createRecPackageMessage(data, sequenceNumber+1)
             sequenceNumber = self.socketSendAndReceiveACK(packageMessage, serverAddr, clientSocket)
-            print( "len(data) {}".format(len(data)))
+            print('cliente recibe Sequence number = {}, data = {}'.format(sequenceNumber, data))
             uploaded += min(len(data), MSS)
         print("Upload finished")
 
@@ -117,10 +116,14 @@ class StopAndWait:
         prevSequenceNumber = 0
         while transferred != fileSize:
 
-            segment = recvQueue.get(block=True, timeout=15)
+            try:
+                segment = recvQueue.get(block=True, timeout=15)
+            except:
+                print(f'Timeouts exceeded: ending thread {clientAddr}...')
+                return
             if Decoder.isRecPackage(segment):            
                 sequenceNumber, data = self.protocol.processRecPackageSegment(segment)
-                print('Sequence number {}'.format(sequenceNumber))
+                print(f'Upload {clientAddr}: server recibe sequence number {sequenceNumber}')
 
                 ACKMessage = self.protocol.createACKMessage(sequenceNumber)
                 sendQueue.put((ACKMessage, clientAddr))
@@ -163,7 +166,7 @@ class StopAndWait:
             sent += min(len(data), MSS)
             morePackages = numPackages > 1
             packageMessage = self.protocol.createDownloadPackageMessage(data, sequenceNumber+1, morePackages)
-            print('server envia el paquete {}'.format(sequenceNumber+1))
+            print(f'Download {clientAddr}: server envia el paquete {sequenceNumber+1}')
             try:
                 sequenceNumber = self.sendAndReceiveACK(packageMessage, clientAddr, recvQueue, sendQueue)
             except Exception as e:
