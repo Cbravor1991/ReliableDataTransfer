@@ -20,6 +20,8 @@ class StopAndWait:
             try:
                 sendQueue.put((msg, addr))
                 segment = recvQueue.get(block=True, timeout=1)
+                if Decoder.isTerminate(segment):
+                    raise Exception('Closed server')
                 # que pasa si se recibe un paquete que no es ACK? deberia saltar excepcion en el decoder
                 sequenceNumber = self.protocol.processACKSegment(segment)
                 print('server recibe ACK {}'.format(sequenceNumber))
@@ -129,6 +131,10 @@ class StopAndWait:
                 prevSequenceNumber = sequenceNumber
             elif Decoder.isUpload(segment):
                 sendQueue.put((ACKMessage, clientAddr))
+            elif Decoder.isTerminate(segment):
+                print(f'Closed server: ending thread {clientAddr}...')
+                return
+
 
         FileHandler.closeFile(file)
         print('Upload finished')               
@@ -158,7 +164,11 @@ class StopAndWait:
             morePackages = numPackages > 1
             packageMessage = self.protocol.createDownloadPackageMessage(data, sequenceNumber+1, morePackages)
             print('server envia el paquete {}'.format(sequenceNumber+1))
-            sequenceNumber = self.sendAndReceiveACK(packageMessage, clientAddr, recvQueue, sendQueue)
+            try:
+                sequenceNumber = self.sendAndReceiveACK(packageMessage, clientAddr, recvQueue, sendQueue)
+            except Exception as e:
+                print(f'{e}: ending thread {clientAddr}...')
+                return
             numPackages -= 1
 
         FileHandler.closeFile(file)

@@ -8,6 +8,7 @@ from lib.selectiveRepeat import SelectiveRepeat
 from lib.socketUDP import SocketUDP
 from lib.protocol import Protocol
 from lib.decoder import Decoder
+from lib.encoder import Encoder
 from lib.fileHandler import FileHandler
 
 class Server:
@@ -22,6 +23,7 @@ class Server:
 
     def start(self):
         # falta borrar las conexiones del dict
+        threading.Thread(target=self.senderThread).start()
         while True:
             segment, clientAddr = self.protocol.receive(self.serverSocket)
 
@@ -38,10 +40,18 @@ class Server:
                 elif Decoder.isDownload(segment):
                     threading.Thread(target=self.transferMethod.serverDownload, args=(recvQueue, self.sendQueue, clientAddr, self.dstPath)).start()
             
+    def senderThread(self):
+        while True:
             segment, clientAddr = self.sendQueue.get()
-            if segment:
-                self.protocol.sendMessage(self.serverSocket, clientAddr, segment)
+            if Decoder.isTerminate(segment):
+                return
+            self.protocol.sendMessage(self.serverSocket, clientAddr, segment)
 
     def shutdown(self):
+        # encolar en todas las conexiones abiertas y en el sendQueue un mensaje de finalizacion, y cerrar el socket
+        terminateMsg = Encoder.createTerminateMessage()
+        for connection in self.connections:
+            self.connections[connection].put(terminateMsg)
+        self.sendQueue.put((terminateMsg, None))
         self.serverSocket.shutdown()
             
