@@ -11,14 +11,14 @@ import logging
 
 class Sender:
     def __init__(self, file, serverPort, fileSize):
-        self.window_size = 3
+        self.window_size = 200
         self.window_start = 0
         self.file = file
         self.file_size = fileSize
         self.file_transfered = 0
         self.currSeqNum = 0
         self.lock = threading.Lock()
-        self.MSS = 5
+        self.MSS = 1000
         self.messagesBuffer = [False for i in range(math.ceil(self.file_size/self.MSS))]
         self.timers = [False for i in range(math.ceil(self.file_size/self.MSS))]
         self.socket = SocketUDP()
@@ -79,7 +79,7 @@ class Sender:
             try:
                 segment, serverAddress = self.protocol.receive(self.socket)
             except timeout:
-                raise Exception('Timeout')
+                pass
             sequenceNumber = self.protocol.processACKSegment(segment)
             #   logging.info("Recibiendo paquete ACK {}".format(sequenceNumber))
             logging.debug("Recibiendo paquete ACK {}".format(sequenceNumber))
@@ -153,10 +153,11 @@ class Sender:
                 #logging.warning("La ventana se encuentra llena")
                 sleep(0.1)
 
-    def startClient(self, clientSocket, filename, file, fileSize, serverAddr):
+    def startClienUpload(self, clientSocket, filename, file, fileSize, serverAddr):
         uploadMsg = self.protocol.createUploadMessage(fileSize, filename)
         self.file = file
         self.file_size = fileSize
+        self.socket = clientSocket
 
         while True:
             try:
