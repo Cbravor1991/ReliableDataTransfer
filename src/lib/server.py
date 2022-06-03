@@ -1,5 +1,6 @@
 import threading
 import logging
+from math import ceil
 from socket import timeout
 from lib.selectiveRepeat import SelectiveRepeat
 from lib.socketUDP import SocketUDP
@@ -99,20 +100,22 @@ class Server:
         path = self.dstPath + fileName
         try:
             file = FileHandler.openFile(path)
+            fileSize = FileHandler.getFileSize(path)
         except:
             print('File not found')
             return
-        fileSize = FileHandler.getFileSize(path)
 
+        numPackages = ceil(fileSize / MSS)
         sequenceNumber = 0
         sent = 0
         morePackages = True
         while sent < fileSize:
             data = FileHandler.readFileBytes(sent, file, MSS)
             sent += min(len(data), MSS)
-            morePackages = len(data) == MSS
+            morePackages = numPackages > 1
             packageMessage = self.protocol.createDownloadPackageMessage(data, sequenceNumber+1, morePackages)
             sequenceNumber = self.sendAndReceiveACK(packageMessage, clientAddr)
+            numPackages -= 1
 
         FileHandler.closeFile(file)
         print("Download finished")
