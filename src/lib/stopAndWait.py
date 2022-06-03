@@ -47,6 +47,20 @@ class StopAndWait:
                 print("timeout") 
         return sequenceNumber    
 
+    def socketSendAndReceiveFileSize(self, msg, serverAddr, clientSocket):
+        clientSocket.resetTimeout()
+        while True:
+            try:
+                clientSocket.setTimeOut(1) 
+                self.protocol.sendMessage(clientSocket, serverAddr, msg)
+                segment, _ = self.protocol.receive(clientSocket)
+                break
+            except timeout:
+                clientSocket.addTimeOut()
+                print("timeout") 
+        return segment    
+
+
     def sendAndReceiveData(self, msg, serverAddr, clientSocket):
         while True:
             try:
