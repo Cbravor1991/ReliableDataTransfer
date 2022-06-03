@@ -9,8 +9,12 @@ from lib.fileHandler import FileHandler
 import math
 from senderForServer import SenderForServer
 from lib.stopAndWait import StopAndWait
+from socket import timeout
 
-MSS = 5
+MSS = 1000
+window_size = 200
+window_start = 0
+
 class SelectiveRepeat:
 
 
@@ -39,6 +43,10 @@ class SelectiveRepeat:
 
     def clientDownload(self, clientSocket, fileName, path, serverAddr):
         
+        MSS = 1000
+        window_size = 200
+        window_start = 0
+
         downloadMsg = self.protocol.createDownloadMessage(fileName)
         stopAndWait = StopAndWait()
         segment = stopAndWait.socketSendAndReceiveFileSize(downloadMsg, serverAddr, clientSocket)
@@ -52,9 +60,6 @@ class SelectiveRepeat:
         ackFSMsg = self.protocol.createACKMessage(0)
         self.protocol.sendMessage(clientSocket, serverAddr, ackFSMsg)
 
-        window_size = 3
-        window_start = 0
-        MSS = 5
         
 
         segmentsToReceive = math.ceil(fileSize/MSS)
@@ -65,7 +70,10 @@ class SelectiveRepeat:
         file = FileHandler.newFile(path, fileName)
         print(fileSize)
         while window_start < segmentsToReceive:
-            segment, serverAddr  = self.protocol.receive(clientSocket)
+            try:
+                segment, serverAddr  = self.protocol.receive(clientSocket)
+            except timeout:
+                pass
             if (Decoder.isRecPackage(segment)):
                 seqNum, data = self.protocol.processRecPackageSegment(segment)
                 if (self.isInsideWindow(window_start, window_size, seqNum)):
@@ -94,6 +102,16 @@ class SelectiveRepeat:
             elif (Decoder.isFileSize(segment)):
                 self.protocol.sendMessage(clientSocket, serverAddr, ackFSMsg)
 
+        try:
+            print("Espero")
+            clientSocket.setTimeOut(5)
+            segment, serverAddr  = self.protocol.receive(clientSocket)
+            print("Recibi")
+            seqNum, data = self.protocol.processRecPackageSegment(segment)
+            ACKMessage = self.protocol.createACKMessage(seqNum)
+            self.protocol.sendMessage(clientSocket, serverAddr, ACKMessage)
+        except:
+            pass
         file.close()
 
 
@@ -124,9 +142,10 @@ class SelectiveRepeat:
 
 
     def serverUpload(self,recvQueue, sendQueue, clientAddr, dstPath):
-        window_size = 3
+
+        MSS = 1000
+        window_size = 200
         window_start = 0
-        MSS = 5
         
         segment = recvQueue.get()
         fileSize, fileName = self.protocol.processUploadSegment(segment)

@@ -11,14 +11,14 @@ import logging
 
 class Sender:
     def __init__(self, file, serverPort, fileSize):
-        self.window_size = 3
+        self.window_size = 200
         self.window_start = 0
         self.file = file
         self.file_size = fileSize
         self.file_transfered = 0
         self.currSeqNum = 0
         self.lock = threading.Lock()
-        self.MSS = 5
+        self.MSS = 1000
         self.messagesBuffer = [False for i in range(math.ceil(self.file_size/self.MSS))]
         self.timers = [False for i in range(math.ceil(self.file_size/self.MSS))]
         self.socket = SocketUDP()

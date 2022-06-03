@@ -48,7 +48,7 @@ class StopAndWait:
         return sequenceNumber    
 
     def socketSendAndReceiveFileSize(self, msg, serverAddr, clientSocket):
-        clientSocket.resetTimeout()
+        clientSocket.resetTimeouts()
         while True:
             try:
                 clientSocket.setTimeOut(1) 

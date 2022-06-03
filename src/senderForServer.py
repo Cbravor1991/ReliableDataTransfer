@@ -9,14 +9,14 @@ import logging
 
 class SenderForServer:
     def __init__(self, recvQueue, sendQueue, clientAddr, file, fileSize):
-        self.window_size = 3
+        self.window_size = 200
         self.window_start = 0
         self.file = file
         self.file_size = fileSize
         self.file_transfered = 0
         self.currSeqNum = 0
         self.lock = threading.Lock()
-        self.MSS = 5
+        self.MSS = 1000
         self.messagesBuffer = [False for i in range(math.ceil(self.file_size/self.MSS))]
         self.timers = [False for i in range(math.ceil(self.file_size/self.MSS))]
         self.protocol = Protocol()
@@ -26,13 +26,20 @@ class SenderForServer:
         self.timeToTimeout = 2
         self.rec_thread = threading.Thread(target=self.receivePack)
         self.send_thread = threading.Thread(target=self.sendPack)
+        self.lastPackAckedCounter = 0
 
 
     def callFromTimeout(self, index):
         if (self.messagesBuffer[index] is not False):
-           
+            if (index == math.ceil(self.file_size/self.MSS)-1):
+                self.lastPackAckedCounter += 1
+                print(self.lastPackAckedCounter)
+                if (self.lastPackAckedCounter > 10):
+                    self.stop_timer(index)
+
             if (index < self.window_start or self.messagesBuffer[index] == "buffered"):
                 self.stop_timer(index)
+            
             else:
                 #logging.warning("Timeout")
                 print("TIMEOUT del seq {}".format(index))
@@ -152,7 +159,7 @@ class SenderForServer:
     def startServer(self):
 
 
-
+        print(math.ceil(self.file_size/self.MSS))
 
         self.send_thread.start()
         self.rec_thread.start()
