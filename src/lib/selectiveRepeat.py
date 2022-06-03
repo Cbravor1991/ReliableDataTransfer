@@ -29,8 +29,9 @@ class SelectiveRepeat:
 
 
     def clientUpload(self, clientSocket, filename, file, fileSize, serverAddr):
+
         sender = Sender(file, serverAddr[1], fileSize)
-        sender.startClient(clientSocket, filename, file, fileSize, serverAddr)
+        sender.startClienUpload(clientSocket, filename, file, fileSize, serverAddr)
 
     def clientDownload(self, clientSocket, fileName, path, serverAddr):
         receiver = Receiver()
@@ -86,7 +87,7 @@ class SelectiveRepeat:
                     if (seqNum == window_start):
                         file.write(messagesBuffer[seqNum])
                         window_start += 1
-                        while window_start < self.getTopOfWindow(fileSize):
+                        while window_start < self.getTopOfWindow(segmentsToReceive, window_start, window_size):
                                 if (messagesBuffer[window_start] is not False):
                                     file.write(messagesBuffer[window_start])
                                     window_start += 1

@@ -153,10 +153,11 @@ class Sender:
                 #logging.warning("La ventana se encuentra llena")
                 sleep(0.1)
 
-    def startClient(self, clientSocket, filename, file, fileSize, serverAddr):
+    def startClienUpload(self, clientSocket, filename, file, fileSize, serverAddr):
         uploadMsg = self.protocol.createUploadMessage(fileSize, filename)
         self.file = file
         self.file_size = fileSize
+        self.socket = clientSocket
 
         while True:
             try:
