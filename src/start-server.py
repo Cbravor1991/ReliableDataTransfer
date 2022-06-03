@@ -6,18 +6,22 @@ from lib.server import Server
 from lib.arguments import parse_server_start
 from lib.stopAndWait import StopAndWait
 
-
 def main():
     args = parse_server_start()
     try:
         if (args.protocol.value == 'selectiveRepeat'):
             server = Server(args.host, args.port, args.dest, SelectiveRepeat())
             server.selectiveRepeat()
+            server.shutdown()
+
         else:
             server = Server(args.host, args.port, args.dest, StopAndWait())
             server.stopAndWait()
+            server.shutdown()
+
     except KeyboardInterrupt:
         print("Shutting down server...")
+    
     except Exception as e:
         print(e)
 

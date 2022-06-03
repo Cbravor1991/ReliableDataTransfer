@@ -10,11 +10,11 @@ import logging
 
 
 class Sender:
-    def __init__(self, path, serverPort):
+    def __init__(self, file, serverPort, fileSize):
         self.window_size = 200
         self.window_start = 0
-        self.file = FileHandler.openFile(path)
-        self.file_size = FileHandler.getFileSize(path)
+        self.file = file
+        self.file_size = fileSize
         self.file_transfered = 0
         self.currSeqNum = 0
         self.lock = threading.Lock()
@@ -27,6 +27,7 @@ class Sender:
         self.timeToTimeout = 2
         self.rec_thread = threading.Thread(target=self.receivePack)
         self.send_thread = threading.Thread(target=self.sendPack)
+
 
     def callFromTimeout(self, index):
         if (self.messagesBuffer[index] is not False):
@@ -143,26 +144,55 @@ class Sender:
                 logging.warning("La ventana se encuentra llena")
                 sleep(0.1)
 
-    def start(self):
-        self.socket.bindSocket("localhost", 0)
-        print(self.file_size)
-        uploadMsg = self.protocol.createUploadMessage(self.file_size, "Elnombredelarchivo")
-        
+    def startClient(self, clientSocket, filename, file, fileSize, serverAddr):
+        uploadMsg = self.protocol.createUploadMessage(fileSize, filename)
+        self.file = file
+        self.file_size = fileSize
+
         while True:
-            self.socket.setTimeOut(1)
             try:
-                self.protocol.sendMessage(self.socket, self.serverAddress, uploadMsg)
-                segment, clientAddr = self.protocol.receive(self.socket)
+                self.socket.setTimeOut(1)
+                self.protocol.sendMessage(clientSocket, serverAddr, uploadMsg)
+                segment, serverAddr = self.protocol.receive(clientSocket)
                 sequenceNumber = self.protocol.processACKSegment(segment)
                 break
             except Exception as e:
                 print("Timeout {}".format(e))
 
-
-        self.rec_thread.start()
+        self.messagesBuffer = [False for i in range(math.ceil(self.file_size/self.MSS))]
+        self.timers = [False for i in range(math.ceil(self.file_size/self.MSS))]
+        
         self.send_thread.start()
+        self.rec_thread.start()
 
-        self.send_thread.join()
         self.rec_thread.join()
+        self.send_thread.join()
+
+    def startServer(self, segment):
+        self.socket.bindSocket("localhost", 0)
+
+        fileName = self.protocol.processDownloadSegment(segment)
+        
+        
+        path = self.dstPath + fileName
+        try:
+            self.file = FileHandler.openFile(path)
+        except:
+            print('File not found')
+            return
+        self.fileSize = FileHandler.getFileSize(path)
+
+        ackMsg = self.protocol.createACKMessage(0)
+        self.protocol.sendMessage(self.socket, self.serverAddress, ackMsg)
+
+        self.messagesBuffer = [False for i in range(math.ceil(self.file_size/self.MSS))]
+        self.timers = [False for i in range(math.ceil(self.file_size/self.MSS))]
+
+
+        self.send_thread.start()
+        self.rec_thread.start()
+
+        self.rec_thread.join()
+        self.send_thread.join()
     
     

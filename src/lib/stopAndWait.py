@@ -11,6 +11,7 @@ class StopAndWait:
         
 
     def upload(self, clientSocket, fileName, file, fileSize, serverAddr):
+
         uploadMessage = self.protocol.createUploadMessage(fileSize, fileName)
         sequenceNumber = self.sendAndReceiveACK(uploadMessage, serverAddr, clientSocket)
 
@@ -27,7 +28,7 @@ class StopAndWait:
     def sendAndReceiveACK(self, msg, serverAddr, clientSocket):
         while True:
             try:
-                clientSocket.setTimeOut(1)  
+                clientSocket.setTimeOut(1) 
                 self.protocol.sendMessage(clientSocket, serverAddr, msg)
                 segment, _ = self.protocol.receive(clientSocket)
                 # que pasa si se recibe un paquete que no es ACK? deberia saltar excepcion en el decoder
@@ -37,19 +38,32 @@ class StopAndWait:
             except timeout:
                 clientSocket.addTimeOut()
                 print("timeout") 
-        return sequenceNumber
+        return sequenceNumber    
+
+    def sendAndReceiveData(self, msg, serverAddr, clientSocket):
+        while True:
+            try:
+                clientSocket.setTimeOut(1) 
+                self.protocol.sendMessage(clientSocket, serverAddr, msg)
+                segment, _ = self.protocol.receive(clientSocket)
+                sequenceNumber, morePackages, data = self.protocol.processDownloadPackageSegment(segment)
+                break
+            except timeout:
+                clientSocket.addTimeOut()
+                print("timeout") 
+        return sequenceNumber, morePackages, data        
 
     def download(self, clientSocket, fileName, path, serverAddr):
         
         file = FileHandler.newFile(str(path), fileName)
         
         downloadMessage = self.protocol.createDownloadMessage(fileName)
-        self.sendAndReceiveACK(downloadMessage, serverAddr, clientSocket)
+        prevSequenceNumber, morePackages, data = self.sendAndReceiveData(downloadMessage, serverAddr, clientSocket)
+        file.write(data)
+        ACKMessage = self.protocol.createACKMessage(prevSequenceNumber)
+        self.protocol.sendMessage(clientSocket, serverAddr, ACKMessage)
         
-        prevSequenceNumber = 0
-        morePackages = True
         while morePackages:
-
             segment, serverAddr = self.protocol.receive(clientSocket)
             sequenceNumber, morePackages, data = self.protocol.processDownloadPackageSegment(segment)
             print('Sequence number {}'.format(sequenceNumber))

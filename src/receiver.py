@@ -23,20 +23,29 @@ class Receiver:
             return window_top
 
 
-    def receive(self):
-        segment, clientAddr = self.protocol.receive(self.socket)
+    def receive(self, segment, clientAddr):
+        self.bindSocket("localhost", 12000)
+        print("Recibiendo")
+
         fileSize, fileName = self.protocol.processUploadSegment(segment)
+        print(fileSize)
+        print(fileName)
         ACKMessage = self.protocol.createACKMessage(0)
         self.protocol.sendMessage(self.socket, clientAddr, ACKMessage)
         file = open(fileName, "wb")
         counter = 0
+        
         self.messagesBuffer = [False for i in range(math.ceil(fileSize/200))]
+        print("eE")
         while counter < math.ceil(fileSize/200):
-
+            print("Entro")
             segment, clientAddr = self.protocol.receive(self.socket)
+            print("recibialgo")
             if (Decoder.isRecPackage(segment)):
+                
                 seqNum, data = self.protocol.processRecPackageSegment(segment)
-
+                print("Recibo: {}".formt(seqNum))
+                print(data)
                 if (seqNum >= self.window_start and
                 seqNum < self.window_size + self.window_start):
 

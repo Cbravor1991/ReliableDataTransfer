@@ -25,7 +25,7 @@ class Encoder:
 
     # Msg = typeRecPackage + sequenceNumber + M + Data
     def createDownloadPackageMessage(self, sequenceNumber, m, data):
-        packageMessage = bytearray([3])
+        packageMessage = bytearray([5])
         packageMessage += pack(">H",sequenceNumber)
         packageMessage += pack(">B",m)
         packageMessage += data

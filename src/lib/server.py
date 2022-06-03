@@ -33,9 +33,9 @@ class Server:
         while True:
             segment, clientAddr = self.protocol.receive(self.serverSocket)
             if Decoder.isUpload(segment):
-                self.transferMethod.sender.start()
+                self.transferMethod.receiveFileFromClient(segment, clientAddr)
             elif Decoder.isDownload(segment):
-                self.transferMethod.receiver.start()
+                self.transferMethod.sender.startServer(segment)
 
 
 
@@ -74,9 +74,9 @@ class Server:
 
     def sendAndReceiveACK(self, msg, clientAddr):
         while True:
-            self.serverSocket.setTimeOut(1)
-            self.protocol.sendMessage(self.serverSocket, clientAddr, msg)
             try:
+                self.serverSocket.setTimeOut(1)
+                self.protocol.sendMessage(self.serverSocket, clientAddr, msg)
                 segment, _ = self.protocol.receive(self.serverSocket)
                 sequenceNumber = self.protocol.processACKSegment(segment)
                 print('ACK {}'.format(sequenceNumber))
@@ -93,8 +93,7 @@ class Server:
         MSS = 6
 
         fileName = self.protocol.processDownloadSegment(segment)
-        ACKMessage = self.protocol.createACKMessage(0)
-        self.protocol.sendMessage(self.serverSocket, clientAddr, ACKMessage)
+
 
         print('command {} fileName {}'.format(segment[0], fileName))
         path = self.dstPath + fileName

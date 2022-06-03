@@ -5,14 +5,23 @@ from sender import Sender
 class SelectiveRepeat:
     
     def __init__(self) -> None:
-        self.receiver = Receiver()
-        self.sender = Sender()
+        pass
 
-    def upload(self):
-        self.sender.start()
+    def upload(self, clientSocket, filename, file, fileSize, serverAddr):
+        sender = Sender(file, serverAddr[1], fileSize)
+        sender.startClient(clientSocket, filename, file, fileSize, serverAddr)
 
     def download(self):
-      self.receiver.start()
+        receiver = Receiver()
+        receiver.receive()
+
+    def downloadFromServer(self):
+        sender = Sender(0, serverAddr[0], serverAddr[1])
+        sender.startClient(clientSocket, filename, file, fileSize, serverAddr)
+    
+    def receiveFileFromClient(self, segment, clientAddr):
+        receiver = Receiver()
+        receiver.receive(segment, clientAddr)
 
 
     

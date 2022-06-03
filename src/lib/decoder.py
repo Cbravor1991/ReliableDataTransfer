@@ -2,6 +2,7 @@ UPLOAD = 1
 DOWNLOAD = 2
 RECPACKAGE = 3
 ACK = 4
+DOWNLOADPACKAGE = 5
 
 class Decoder:
     def isUpload(segment):
@@ -15,6 +16,9 @@ class Decoder:
     
     def isACK(segment):
         return segment[0] == ACK
+
+    def isDownloadPackage(segment):
+        return segment[0] == DOWNLOADPACKAGE
 
     # Msg = typeUpload + FileSize + FileName    
     def processUploadSegment(self, segment):  
@@ -44,7 +48,7 @@ class Decoder:
         sequenceNumber = int.from_bytes(segment[1:], 'big')
         return sequenceNumber
     
-
+    
 
   
     
