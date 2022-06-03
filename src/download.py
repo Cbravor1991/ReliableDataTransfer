@@ -19,7 +19,6 @@ def main():
     except KeyboardInterrupt:
         print("Shutting down client...")
     except Exception as e:
-        print("ACA")
         print(e)
 
     print("Client shut down")

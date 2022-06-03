@@ -54,6 +54,7 @@ class Server:
         prevSequenceNumber = 0
         while transferred != fileSize: # hasta terminar el upload o que haya algun error
 
+            self.serverSocket.setTimeOut(15)
             segment, clientAddr = self.protocol.receive(self.serverSocket)
             if Decoder.isRecPackage(segment):            
                 sequenceNumber, data = self.protocol.processRecPackageSegment(segment)
@@ -80,11 +81,11 @@ class Server:
                 self.protocol.sendMessage(self.serverSocket, clientAddr, msg)
                 segment, _ = self.protocol.receive(self.serverSocket)
                 sequenceNumber = self.protocol.processACKSegment(segment)
-                print('ACK {}'.format(sequenceNumber))
+                print('server recibe ACK {}'.format(sequenceNumber))
                 break
             except timeout:
                 self.serverSocket.addTimeOut()
-                print("timeout") 
+                print("timeout, server no recibe el ack. Se reenvia el paquete") 
         return sequenceNumber
 
 
@@ -114,6 +115,7 @@ class Server:
             sent += min(len(data), MSS)
             morePackages = numPackages > 1
             packageMessage = self.protocol.createDownloadPackageMessage(data, sequenceNumber+1, morePackages)
+            print('server envia el paquete {}'.format(sequenceNumber+1))
             sequenceNumber = self.sendAndReceiveACK(packageMessage, clientAddr)
             numPackages -= 1
 
