@@ -3,6 +3,7 @@ import logging
 from lib.protocol import Protocol
 from lib.fileHandler import FileHandler
 from lib.decoder import Decoder
+from lib.encoder import Encoder
 from socket import timeout
 from math import ceil
 
@@ -158,6 +159,9 @@ class StopAndWait:
                 logging.debug(f'Closed server: ending thread {clientAddr}...')
                 return
 
+        terminateMsg = Encoder.createTerminateMessage()
+        sendQueue.put((terminateMsg, clientAddr))
+
         for _ in range(FINAL_ACK_TRIES):    
             sendQueue.put((ACKMessage, clientAddr))
 
@@ -195,6 +199,9 @@ class StopAndWait:
                 logging.debug(f'{e}: ending thread {clientAddr}...')
                 return
             numPackages -= 1
+
+        terminateMsg = Encoder.createTerminateMessage()
+        sendQueue.put((terminateMsg, clientAddr))
 
         FileHandler.closeFile(file)
         logging.info(f'Download from {clientAddr} finished')               

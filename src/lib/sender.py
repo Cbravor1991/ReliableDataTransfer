@@ -79,7 +79,7 @@ class Sender:
             try:
                 segment, serverAddress = self.protocol.receive(self.socket)
             except timeout:
-                pass
+                continue
             sequenceNumber = self.protocol.processACKSegment(segment)
             #   logging.info("Recibiendo paquete ACK {}".format(sequenceNumber))
             logging.debug("Recibiendo paquete ACK {}".format(sequenceNumber))

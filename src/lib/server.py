@@ -35,7 +35,9 @@ class Server:
                 recvQueue = Queue()
                 recvQueue.put(segment)
                 self.connections[clientAddr] = recvQueue
-                if Decoder.isUpload(segment):
+                if Decoder.isTerminate(segment):
+                    self.connections[clientAddr].pop()
+                elif clientAddr in self.connections:
                     threading.Thread(target=self.transferMethod.serverUpload, args=(recvQueue, self.sendQueue, clientAddr, self.dstPath)).start()
                 elif Decoder.isDownload(segment):
                     threading.Thread(target=self.transferMethod.serverDownload, args=(recvQueue, self.sendQueue, clientAddr, self.dstPath)).start()

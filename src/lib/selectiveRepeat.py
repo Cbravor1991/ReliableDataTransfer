@@ -111,6 +111,10 @@ class SelectiveRepeat:
             self.protocol.sendMessage(clientSocket, serverAddr, ACKMessage)
         except:
             pass
+
+        for _ in range(FINAL_ACK_TRIES):
+            self.protocol.sendMessage(clientSocket, serverAddr, ACKMessage)
+        
         file.close()
 
 
