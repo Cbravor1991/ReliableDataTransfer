@@ -24,7 +24,7 @@ class StopAndWait:
                     raise Exception('Closed server')
                 # que pasa si se recibe un paquete que no es ACK? deberia saltar excepcion en el decoder
                 sequenceNumber = self.protocol.processACKSegment(segment)
-                print('Download {addr}, server recibe ACK {}'.format(sequenceNumber))
+                print(f'Download {addr}, server recibe ACK {sequenceNumber}')
                 break
             except queue.Empty:
                 timeouts += 1
