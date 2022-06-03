@@ -7,7 +7,7 @@ from lib.sender import Sender
 from lib.fileHandler import FileHandler
 import math
 from lib.senderForServer import SenderForServer
-from lib.stopAndWait import StopAndWait
+from lib.stopAndWait import StopAndWait, FINAL_ACK_TRIES
 from socket import timeout
 
 MSS = 1000
@@ -128,10 +128,14 @@ class SelectiveRepeat:
             return
 
         fileSizeSegment = Encoder.createFileSize(fileSize)
-        sendQueue.put((fileSizeSegment, clientAddr))
-        
-        #sender = Sender(file, 5, fileSize )
-        #sender.startServer(segment, serverSocket, clientAddr)
+
+        stopAndWait = StopAndWait()
+        seqNum = stopAndWait.sendAndReceiveACK(fileSizeSegment,clientAddr, recvQueue, sendQueue)
+
+        sender = SenderForServer(recvQueue, sendQueue, clientAddr, file, fileSize)
+        sender.startServer()
+
+        logging.info(f'Download from {clientAddr}: File {fileName} finished')
     
 
 
@@ -173,6 +177,11 @@ class SelectiveRepeat:
                     sendQueue.put((ACKMessage, clientAddr))
             elif (Decoder.isUpload(segment)):
                 sendQueue.put((ACKMessage, clientAddr))
+
+        for _ in range(FINAL_ACK_TRIES):
+            sendQueue.put((ACKMessage, clientAddr))
+
+        logging.info(f'Upload from {clientAddr}: File {fileName} finished')
         file.close()
 
     
