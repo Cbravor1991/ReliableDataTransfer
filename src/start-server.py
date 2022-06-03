@@ -8,16 +8,14 @@ from lib.stopAndWait import StopAndWait
 
 def main():
     args = parse_server_start()
-    try:
-        if (args.protocol.value == 'selectiveRepeat'):
-            server = Server(args.host, args.port, args.dest, SelectiveRepeat())
-            server.selectiveRepeat()
-            server.shutdown()
+    if (args.protocol.value == 'selectiveRepeat'):
+        transferMethod = SelectiveRepeat()
+    else:
+        transferMethod = StopAndWait()
 
-        else:
-            server = Server(args.host, args.port, args.dest, StopAndWait())
-            server.stopAndWait()
-            server.shutdown()
+    try:
+        server = Server(args.host, args.port, args.dest, transferMethod)
+        server.start()
 
     except KeyboardInterrupt:
         print("Shutting down server...")

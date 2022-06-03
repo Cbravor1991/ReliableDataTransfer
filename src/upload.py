@@ -12,14 +12,13 @@ def main():
     serverAddr = (args.host, args.port)
 
     if (args.protocol.value == 'selectiveRepeat'):
-        client = Client('localhost', 0, SelectiveRepeat())
+        transferMethod = SelectiveRepeat()
     else:
-        client = Client('localhost', 0, StopAndWait())
+        transferMethod = StopAndWait()
 
-
+    client = Client('localhost', 0, transferMethod)
     try:
         client.upload(args.filename, file, fileSize, serverAddr)
-
     except KeyboardInterrupt:
         print("Shutting down client...")
     except Exception as e:

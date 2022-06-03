@@ -20,10 +20,10 @@ class Client:
         self.transferMethod = transferMethod
 
     def upload(self, filename, file, fileSize, serverAddr):
-        self.transferMethod.upload(self.clientSocket, filename, file, fileSize, serverAddr)
+        self.transferMethod.clientUpload(self.clientSocket, filename, file, fileSize, serverAddr)
 
     def download(self, fileName, path, serverAddr):
-        self.transferMethod.download(self.clientSocket, fileName, path, serverAddr)
+        self.transferMethod.clientDownload(self.clientSocket, fileName, path, serverAddr)
               
     def shutdown(self):
         self.clientSocket.shutdown()
