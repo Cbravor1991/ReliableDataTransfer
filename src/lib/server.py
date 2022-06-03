@@ -1,5 +1,6 @@
 import threading
 import logging
+from math import ceil
 from socket import timeout
 from lib.selectiveRepeat import SelectiveRepeat
 from lib.socketUDP import SocketUDP
@@ -52,6 +53,7 @@ class Server:
         prevSequenceNumber = 0
         while transferred != fileSize: # hasta terminar el upload o que haya algun error
 
+            self.serverSocket.setTimeOut(15)
             segment, clientAddr = self.protocol.receive(self.serverSocket)
             if Decoder.isRecPackage(segment):            
                 sequenceNumber, data = self.protocol.processRecPackageSegment(segment)
@@ -78,11 +80,11 @@ class Server:
                 self.protocol.sendMessage(self.serverSocket, clientAddr, msg)
                 segment, _ = self.protocol.receive(self.serverSocket)
                 sequenceNumber = self.protocol.processACKSegment(segment)
-                print('ACK {}'.format(sequenceNumber))
+                print('server recibe ACK {}'.format(sequenceNumber))
                 break
             except timeout:
                 self.serverSocket.addTimeOut()
-                print("timeout") 
+                print("timeout, server no recibe el ack. Se reenvia el paquete") 
         return sequenceNumber
 
 
@@ -98,20 +100,23 @@ class Server:
         path = self.dstPath + fileName
         try:
             file = FileHandler.openFile(path)
+            fileSize = FileHandler.getFileSize(path)
         except:
             print('File not found')
             return
-        fileSize = FileHandler.getFileSize(path)
 
+        numPackages = ceil(fileSize / MSS)
         sequenceNumber = 0
         sent = 0
         morePackages = True
         while sent < fileSize:
             data = FileHandler.readFileBytes(sent, file, MSS)
             sent += min(len(data), MSS)
-            morePackages = len(data) == MSS
+            morePackages = numPackages > 1
             packageMessage = self.protocol.createDownloadPackageMessage(data, sequenceNumber+1, morePackages)
+            print('server envia el paquete {}'.format(sequenceNumber+1))
             sequenceNumber = self.sendAndReceiveACK(packageMessage, clientAddr)
+            numPackages -= 1
 
         FileHandler.closeFile(file)
         print("Download finished")

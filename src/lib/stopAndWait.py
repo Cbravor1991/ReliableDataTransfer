@@ -50,7 +50,7 @@ class StopAndWait:
                 break
             except timeout:
                 clientSocket.addTimeOut()
-                print("timeout") 
+                print("timeout, no se recibio el DownloadPackage. Se envia nuevamente el ACK") 
         return sequenceNumber, morePackages, data        
 
     def download(self, clientSocket, fileName, path, serverAddr):
@@ -59,20 +59,22 @@ class StopAndWait:
         
         downloadMessage = self.protocol.createDownloadMessage(fileName)
         prevSequenceNumber, morePackages, data = self.sendAndReceiveData(downloadMessage, serverAddr, clientSocket)
+        print('cliente recibe Sequence number = {}, data = {}'.format(prevSequenceNumber, data))
         file.write(data)
         ACKMessage = self.protocol.createACKMessage(prevSequenceNumber)
         self.protocol.sendMessage(clientSocket, serverAddr, ACKMessage)
         
         while morePackages:
+            clientSocket.setTimeOut(15)
             segment, serverAddr = self.protocol.receive(clientSocket)
             sequenceNumber, morePackages, data = self.protocol.processDownloadPackageSegment(segment)
-            print('Sequence number {}'.format(sequenceNumber))
-            print(data)
+            print('cliente recibe Sequence number = {}, data = {}'.format(sequenceNumber, data))
             ACKMessage = self.protocol.createACKMessage(sequenceNumber)
             self.protocol.sendMessage(clientSocket, serverAddr, ACKMessage)
 
             if sequenceNumber > prevSequenceNumber:
                 file.write(data)
             prevSequenceNumber = sequenceNumber
+            
         FileHandler.closeFile(file)
         print("Download finished")
