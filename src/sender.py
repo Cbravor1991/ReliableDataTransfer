@@ -11,14 +11,14 @@ import logging
 
 class Sender:
     def __init__(self, file, serverPort, fileSize):
-        self.window_size = 200
+        self.window_size = 3
         self.window_start = 0
         self.file = file
         self.file_size = fileSize
         self.file_transfered = 0
         self.currSeqNum = 0
         self.lock = threading.Lock()
-        self.MSS = 200
+        self.MSS = 5
         self.messagesBuffer = [False for i in range(math.ceil(self.file_size/self.MSS))]
         self.timers = [False for i in range(math.ceil(self.file_size/self.MSS))]
         self.socket = SocketUDP()
@@ -35,10 +35,10 @@ class Sender:
             if (index < self.window_start or self.messagesBuffer[index] == "buffered"):
                 self.stop_timer(index)
             else:
-                logging.warning("Timeout")
+                #logging.warning("Timeout")
                 print("TIMEOUT del seq {}".format(index))
-                logging.debug("Timeout paquete nro seq {}".format(index))
-                logging.info("Reenviando paquete nro seq {}".format(index))
+                #logging.debug("Timeout paquete nro seq {}".format(index))
+                #logging.info("Reenviando paquete nro seq {}".format(index))
                 self.protocol.sendMessage(self.socket,
                                         self.serverAddress,
                                         self.messagesBuffer[index])
@@ -46,7 +46,7 @@ class Sender:
 
     def removeMessage(self, index):
         self.lock.acquire(blocking=True)
-        logging.debug("Removiendo mensaje {}".format(index))
+        #logging.debug("Removiendo mensaje {}".format(index))
         self.messagesBuffer[index] = False
         self.lock.release()
 
@@ -54,7 +54,7 @@ class Sender:
         self.lock.acquire(blocking=True)
         logging.debug("Iniciando Timer de mensaje {} con un tiempo de {}"
                       .format(index, self.timeToTimeout))
-        logging.info("Iniciando timer de {}".format(index))
+        #logging.info("Iniciando timer de {}".format(index))
         self.timers[index] = Timer(self.timeToTimeout,
                                    self.callFromTimeout,
                                    args=(index,))
@@ -64,23 +64,28 @@ class Sender:
     def stop_timer(self, index):
         self.lock.acquire(blocking=True)
         if (not self.timers[index]):
-            logging.debug("No habia timer en {}".format(index))
+            #logging.debug("No habia timer en {}".format(index)
+            # )
+            pass
         elif(self.timers[index].is_alive()):
             self.timers[index].cancel()
-            logging.debug("Deteniendo timer {}".format(index))
+            #logging.debug("Deteniendo timer {}".format(index))
         self.timers[index] = False
         self.lock.release()
 
     def receivePack(self):
         while self.window_start < math.ceil(self.file_size/self.MSS):
             print("Window start: {}".format(self.window_start))
-            segment, serverAddress = self.protocol.receive(self.socket)
+            try:
+                segment, serverAddress = self.protocol.receive(self.socket)
+            except TimeoutError:
+                pass
             sequenceNumber = self.protocol.processACKSegment(segment)
-            logging.info("Recibiendo paquete ACK {}".format(sequenceNumber))
+            #   logging.info("Recibiendo paquete ACK {}".format(sequenceNumber))
             print("Recibiendo paquete ACK {}".format(sequenceNumber))
             if (sequenceNumber == self.window_start):
-                logging.debug("El paquete ACK {} coincide con la base ventana"
-                              .format(sequenceNumber))
+                #logging.debug("El paquete ACK {} coincide con la base ventana"
+                 #             .format(sequenceNumber))
                 
                 self.stop_timer(sequenceNumber)
                 self.removeMessage(sequenceNumber)
@@ -90,8 +95,8 @@ class Sender:
                     if (self.messagesBuffer[i] == 'buffered'):
                         self.window_start += 1
                     else:
-                        logging.debug("WINDOW START: {}"
-                                      .format(self.window_start))
+                        #logging.debug("WINDOW START: {}"
+                        #             .format(self.window_start))
                         break
                 
             elif (sequenceNumber > self.window_start and
@@ -121,27 +126,31 @@ class Sender:
         return total_messages <= self.window_size and seqNumberBelowWindow
 
     def sendPack(self):
+        print(self.file_transfered)
+        print(self.file_size)
         while self.file_transfered < self.file_size:
-            logging.info("Window: {}".format(self.messagesBuffer[
-                                             self.window_start:
-                                             self.window_start +
-                                             self.window_size]))
+            #logging.info("Window: {}".format(self.messagesBuffer[
+              #                                self.window_start:
+                #                              self.window_start +
+                  #                            self.window_size]))
             if(self.isNotFullMessageBuffer(self.currSeqNum)):
                 data = self.readFile(self.currSeqNum)
+                print("Sending: {} seqNum: {}".format(data, self.currSeqNum))
                 recMsg = self.protocol.createRecPackageMessage(data,
                                                                self.currSeqNum)
+                
                 self.protocol.sendMessage(self.socket,
                                           self.serverAddress,
                                           recMsg)
                 
                 self.messagesBuffer[self.currSeqNum] = recMsg
                 self.start_timer(self.currSeqNum)
-                logging.info('Se envia paquete con nro seq: {}'
-                             .format(self.currSeqNum))
+                #logging.info('Se envia paquete con nro seq: {}'
+                 #             .format(self.currSeqNum))
                 self.currSeqNum += 1
                 self.file_transfered += len(data)
             else:
-                logging.warning("La ventana se encuentra llena")
+                #logging.warning("La ventana se encuentra llena")
                 sleep(0.1)
 
     def startClient(self, clientSocket, filename, file, fileSize, serverAddr):
@@ -168,22 +177,11 @@ class Sender:
         self.rec_thread.join()
         self.send_thread.join()
 
-    def startServer(self, segment):
-        self.socket.bindSocket("localhost", 0)
+    def startServer(self, segment, serverSocket, clientAddr):
 
-        fileName = self.protocol.processDownloadSegment(segment)
-        
-        
-        path = self.dstPath + fileName
-        try:
-            self.file = FileHandler.openFile(path)
-        except:
-            print('File not found')
-            return
-        self.fileSize = FileHandler.getFileSize(path)
+        self.socket = serverSocket
+        self.serverAddress = clientAddr
 
-        ackMsg = self.protocol.createACKMessage(0)
-        self.protocol.sendMessage(self.socket, self.serverAddress, ackMsg)
 
         self.messagesBuffer = [False for i in range(math.ceil(self.file_size/self.MSS))]
         self.timers = [False for i in range(math.ceil(self.file_size/self.MSS))]

@@ -10,6 +10,11 @@ class Encoder:
         uploadMessage += bytearray(fileName, 'utf-8')
         return uploadMessage
     
+    def createFileSize(fileSize):
+        fileSizeMsg = bytearray([6])
+        fileSizeMsg += pack(">i",fileSize)
+        return fileSizeMsg
+
     # Msg = typeDownload + FileName
     def createDownloadMessage(self, fileName):
         downloadMessage = bytearray([2])

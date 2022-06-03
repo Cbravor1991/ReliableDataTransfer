@@ -15,7 +15,6 @@ class Server:
         self.serverSocket.bindSocket(addr, port)
         self.protocol = Protocol()
         self.transferMethod = transferMethod
-
         
 
 
@@ -33,9 +32,9 @@ class Server:
         while True:
             segment, clientAddr = self.protocol.receive(self.serverSocket)
             if Decoder.isUpload(segment):
-                self.transferMethod.receiveFileFromClient(segment, clientAddr)
+                self.transferMethod.receiveFileFromClient(segment, clientAddr, self.serverSocket)
             elif Decoder.isDownload(segment):
-                self.transferMethod.sender.startServer(segment)
+                self.transferMethod.sendFileToClient(segment, self.serverSocket, clientAddr)
 
 
 
