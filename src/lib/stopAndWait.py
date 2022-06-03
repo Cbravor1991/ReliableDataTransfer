@@ -7,6 +7,7 @@ from math import ceil
 
 MSS = 5
 N_TIMEOUTS = 20
+FINAL_ACK_TRIES = 5
 
 class StopAndWait:
 
@@ -99,7 +100,10 @@ class StopAndWait:
             if sequenceNumber > prevSequenceNumber:
                 file.write(data)
             prevSequenceNumber = sequenceNumber
-            
+
+        for _ in range(FINAL_ACK_TRIES):    
+            self.protocol.sendMessage(clientSocket, serverAddr, ACKMessage)
+    
         FileHandler.closeFile(file)
         print("Download finished")
 
@@ -139,6 +143,8 @@ class StopAndWait:
                 print(f'Closed server: ending thread {clientAddr}...')
                 return
 
+        for _ in range(FINAL_ACK_TRIES):    
+            sendQueue.put((ACKMessage, clientAddr))
 
         FileHandler.closeFile(file)
         print('Upload finished')               
