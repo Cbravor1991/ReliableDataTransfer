@@ -101,19 +101,19 @@ class SelectiveRepeat:
             elif (Decoder.isFileSize(segment)):
                 self.protocol.sendMessage(clientSocket, serverAddr, ackFSMsg)
 
-        try:
-            logging.debug("Espero")
-            clientSocket.setTimeOut(5)
-            segment, serverAddr  = self.protocol.receive(clientSocket)
-            logging.debug("Recibi")
-            seqNum, data = self.protocol.processRecPackageSegment(segment)
-            ACKMessage = self.protocol.createACKMessage(seqNum)
-            self.protocol.sendMessage(clientSocket, serverAddr, ACKMessage)
-        except:
-            pass
+        # try:
+        #     logging.debug("Espero")
+        #     clientSocket.setTimeOut(5)
+        #     segment, serverAddr  = self.protocol.receive(clientSocket)
+        #     logging.debug("Recibi")
+        #     seqNum, data = self.protocol.processRecPackageSegment(segment)
+        #     ACKMessage = self.protocol.createACKMessage(seqNum)
+        #     self.protocol.sendMessage(clientSocket, serverAddr, ACKMessage)
+        # except:
+        #     pass
 
-        for _ in range(FINAL_ACK_TRIES):
-            self.protocol.sendMessage(clientSocket, serverAddr, ACKMessage)
+        # for _ in range(FINAL_ACK_TRIES):
+        #     self.protocol.sendMessage(clientSocket, serverAddr, ACKMessage)
 
         file.close()
 

@@ -24,8 +24,6 @@ def main():
         client.download(args.filename, args.dst, serverAddr)
     except KeyboardInterrupt:
         logging.info("Shutting down client...")
-    except Exception as e:
-        logging.warning(f'Exception: {e}')
 
     logging.info("Client shut down")
     client.shutdown()

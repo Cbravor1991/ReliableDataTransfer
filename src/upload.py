@@ -29,8 +29,6 @@ def main():
         client.upload(args.filename, file, fileSize, serverAddr)
     except KeyboardInterrupt:
         logging.info("Shutting down client...")
-    except Exception as e:
-        logging.warning(f'Exception: {e}')
 
     FileHandler.closeFile(file)
     client.shutdown()
