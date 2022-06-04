@@ -61,7 +61,7 @@ class StopAndWait:
                 break
             except timeout:
                 clientSocket.addTimeOut()
-                print("timeout") 
+                logging.debug("timeout, no se recibe el filesize. Se envia nuevamente el mensaje inicial") 
         return segment    
 
 

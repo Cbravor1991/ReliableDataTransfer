@@ -48,12 +48,12 @@ class SelectiveRepeat:
 
         downloadMsg = self.protocol.createDownloadMessage(fileName)
         stopAndWait = StopAndWait()
-        segment = stopAndWait.socketSendAndReceiveFileSize(downloadMsg, serverAddr, clientSocket)
-        logging.debug(segment)
-        
-        #self.protocol.sendMessage(clientSocket, serverAddr, downloadMsg)
+        try:
+            segment = stopAndWait.socketSendAndReceiveFileSize(downloadMsg, serverAddr, clientSocket)
+        except:
+            logging.warning('Timeouts exceeded.')
+            return
 
-        #segment, serverAddr = self.protocol.receive(clientSocket)
         fileSize = Decoder.processFileSize(segment)
         
         ackFSMsg = self.protocol.createACKMessage(0)
@@ -65,7 +65,7 @@ class SelectiveRepeat:
         messagesBuffer = [False for i in range(segmentsToReceive)]
 
 
-
+        seqNum = 0
         file = FileHandler.newFile(path, fileName)
         logging.debug(fileSize)
         while window_start < segmentsToReceive:
@@ -77,7 +77,7 @@ class SelectiveRepeat:
                 seqNum, data = self.protocol.processRecPackageSegment(segment)
                 if (self.isInsideWindow(window_start, window_size, seqNum)):
                     ACKMessage = self.protocol.createACKMessage(seqNum)
-                    logging.debug("Mando ACK: {}".format(seqNum))
+                    logging.debug("Se envio ACK: {}".format(seqNum))
                     self.protocol.sendMessage(clientSocket, serverAddr, ACKMessage)
                     
                     messagesBuffer[seqNum] = data
@@ -101,19 +101,9 @@ class SelectiveRepeat:
             elif (Decoder.isFileSize(segment)):
                 self.protocol.sendMessage(clientSocket, serverAddr, ackFSMsg)
 
-        # try:
-        #     logging.debug("Espero")
-        #     clientSocket.setTimeOut(5)
-        #     segment, serverAddr  = self.protocol.receive(clientSocket)
-        #     logging.debug("Recibi")
-        #     seqNum, data = self.protocol.processRecPackageSegment(segment)
-        #     ACKMessage = self.protocol.createACKMessage(seqNum)
-        #     self.protocol.sendMessage(clientSocket, serverAddr, ACKMessage)
-        # except:
-        #     pass
-
-        # for _ in range(FINAL_ACK_TRIES):
-        #     self.protocol.sendMessage(clientSocket, serverAddr, ACKMessage)
+        ACKMessage = self.protocol.createACKMessage(seqNum)
+        for _ in range(FINAL_ACK_TRIES):
+            self.protocol.sendMessage(clientSocket, serverAddr, ACKMessage)
 
         file.close()
 

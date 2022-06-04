@@ -22,12 +22,12 @@ class Server:
         self.connections = {}
 
     def start(self):
-        # falta borrar las conexiones del dict
         threading.Thread(target=self.senderThread).start()
         while True:
             segment, clientAddr = self.protocol.receive(self.serverSocket)
-
-            if clientAddr in self.connections:
+            if Decoder.isTerminate(segment):
+                self.connections[clientAddr].pop()
+            elif clientAddr in self.connections:
                 self.connections[clientAddr].put(segment)
             
             else:
@@ -35,12 +35,11 @@ class Server:
                 recvQueue = Queue()
                 recvQueue.put(segment)
                 self.connections[clientAddr] = recvQueue
-                if Decoder.isTerminate(segment):
-                    self.connections[clientAddr].pop()
-                elif Decoder.isUpload(segment):
+                if Decoder.isUpload(segment):
                     threading.Thread(target=self.transferMethod.serverUpload, args=(recvQueue, self.sendQueue, clientAddr, self.dstPath)).start()
                 elif Decoder.isDownload(segment):
                     threading.Thread(target=self.transferMethod.serverDownload, args=(recvQueue, self.sendQueue, clientAddr, self.dstPath)).start()
+            
             
     def senderThread(self):
         while True:
@@ -54,6 +53,7 @@ class Server:
         terminateMsg = Encoder.createTerminateMessage()
         for connection in self.connections:
             self.connections[connection].put(terminateMsg)
+        self.sendQueue.put((terminateMsg, None))
         self.sendQueue.put((terminateMsg, None))
         self.serverSocket.shutdown()
             
