@@ -36,9 +36,8 @@ class SelectiveRepeat:
 
 
     def clientUpload(self, clientSocket, filename, file, fileSize, serverAddr):
-
-        sender = Sender(file, serverAddr[1], fileSize)
-        sender.startClienUpload(clientSocket, filename, file, fileSize, serverAddr)
+        self.sender = Sender(file, serverAddr[1], fileSize)
+        self.sender.startClienUpload(clientSocket, filename, file, fileSize, serverAddr)
 
     def clientDownload(self, clientSocket, fileName, path, serverAddr):
         

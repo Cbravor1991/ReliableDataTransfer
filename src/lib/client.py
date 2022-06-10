@@ -2,6 +2,7 @@ from fileinput import filename
 import threading
 import logging
 from socket import timeout
+from time import sleep
 
 from lib.socketUDP import SocketUDP
 from lib.protocol import Protocol
@@ -26,5 +27,7 @@ class Client:
         self.transferMethod.clientDownload(self.clientSocket, fileName, path, serverAddr)
               
     def shutdown(self):
+        self.transferMethod.sender.active = False
+        sleep(1)
         self.clientSocket.shutdown()
             
