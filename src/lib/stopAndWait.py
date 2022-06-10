@@ -9,7 +9,7 @@ from math import ceil
 
 MSS = 5
 N_TIMEOUTS = 20
-FINAL_ACK_TRIES = 5
+FINAL_ACK_TRIES = 10
 
 class StopAndWait:
 

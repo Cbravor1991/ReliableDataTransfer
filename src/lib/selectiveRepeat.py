@@ -176,6 +176,7 @@ class SelectiveRepeat:
                 logging.debug(f'Closed server: ending thread {clientAddr}...')
                 return
 
+        ACKMessage = self.protocol.createACKMessage(seqNum)
         for _ in range(FINAL_ACK_TRIES):
             sendQueue.put((ACKMessage, clientAddr))
 

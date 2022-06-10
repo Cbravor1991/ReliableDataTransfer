@@ -33,8 +33,9 @@ def main():
 
     FileHandler.closeFile(file)
     client.shutdown()
-    client.transferMethod.sender.active = False
-    sleep(1)
+    if (args.protocol.value == 'selectiveRepeat'):
+        client.transferMethod.sender.active = False
+        sleep(1)
 
     logging.info("Client shut down")
 

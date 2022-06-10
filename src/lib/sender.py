@@ -69,7 +69,7 @@ class Sender:
         self.lock.release()
 
     def receivePack(self):
-        while self.window_start < math.ceil(self.file_size/self.MSS)-1 and self.active:
+        while self.window_start < math.ceil(self.file_size/self.MSS) and self.active:
             logging.debug("Window start: {}".format(self.window_start))
             try:
                 segment, serverAddress = self.protocol.receive(self.socket)
