@@ -149,5 +149,11 @@ class SenderForServer:
         self.send_thread.start()
         self.rec_thread.start()
 
+        self.send_thread.join()
+        self.rec_thread.join()
+
+        
+
+
     
     
