@@ -4,6 +4,7 @@ from lib.fileHandler import FileHandler
 from lib.arguments import parse_client_upload
 from lib.selectiveRepeat import SelectiveRepeat
 from lib.stopAndWait import StopAndWait
+from time import sleep
 
 def main():
     args, level = parse_client_upload()
@@ -32,6 +33,9 @@ def main():
 
     FileHandler.closeFile(file)
     client.shutdown()
+    client.transferMethod.sender.active = False
+    sleep(1)
+
     logging.info("Client shut down")
 
 
