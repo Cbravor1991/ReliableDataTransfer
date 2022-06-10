@@ -29,6 +29,7 @@ class SenderForServer:
         self.send_thread = threading.Thread(target=self.sendPack)
         self.lastPackAckedCounter = 0
         self.active = True
+        self.finished = False
 
 
     def callFromTimeout(self, index):
@@ -138,6 +139,9 @@ class SenderForServer:
                 self.file_transfered += len(data)
             else:
                 sleep(0.1)
+        
+        if self.file_transfered >= self.file_size:
+            self.finished = True
 
   
 

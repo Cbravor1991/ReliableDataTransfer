@@ -130,7 +130,8 @@ class SelectiveRepeat:
         sender = SenderForServer(recvQueue, sendQueue, clientAddr, file, fileSize)
         sender.startServer()
 
-        logging.info(f'Download from {clientAddr}: File {fileName} finished')
+        if sender.finished:
+            logging.info(f'Download from {clientAddr}: File {fileName} finished')
    
 
 
