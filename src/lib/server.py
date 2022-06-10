@@ -54,6 +54,5 @@ class Server:
         for connection in self.connections:
             self.connections[connection].put(terminateMsg)
         self.sendQueue.put((terminateMsg, None))
-        self.sendQueue.put((terminateMsg, None))
         self.serverSocket.shutdown()
             
