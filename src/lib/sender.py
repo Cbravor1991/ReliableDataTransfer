@@ -73,7 +73,7 @@ class Sender:
             logging.debug("Window start: {}".format(self.window_start))
             try:
                 segment, serverAddress = self.protocol.receive(self.socket)
-            except timeout:
+            except:
                 continue
 
             sequenceNumber = self.protocol.processACKSegment(segment)
